@@ -24,6 +24,7 @@ from tabulate import tabulate
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from data.generator import generate_intraday_data
+from data.loader import load_sensex_data
 from strategies import (
     MACDCrossoverRSIFilter,
     RSIReversalMomentum,
@@ -152,10 +153,7 @@ def print_strategy_results(name, metrics, symbol):
 def main():
     print_header()
 
-    symbols = {
-        "NIFTY50": {"seeds": [42, 123, 777, 2024, 9999], "days": 250},
-        "SENSEX": {"seeds": [42, 123, 777, 2024, 9999], "days": 250},
-    }
+    nifty_config = {"seeds": [42, 123, 777, 2024, 9999], "days": 250}
 
     strategies = create_strategies()
     engine = BacktestEngine(
@@ -166,41 +164,62 @@ def main():
 
     all_results = []
 
-    for symbol, config in symbols.items():
-        print(f"\n{'─' * 90}")
-        print(f"  BACKTESTING ON: {symbol} ({config['days']} trading days x {len(config['seeds'])} seeds)")
-        print(f"{'─' * 90}")
+    # ── SENSEX: Real market data ──
+    print(f"\n{'─' * 90}")
+    sensex_data = load_sensex_data()
+    num_sensex_days = sensex_data["date"].nunique()
+    print(f"  BACKTESTING ON: SENSEX (REAL DATA — {num_sensex_days} trading days)")
+    print(f"{'─' * 90}")
 
-        for strat_name, strategy in strategies.items():
-            seed_metrics = []
+    for strat_name, strategy in strategies.items():
+        result = run_single_backtest(strategy, sensex_data, engine)
+        metrics = result["metrics"]
 
-            for seed in config["seeds"]:
-                data = generate_intraday_data(
-                    symbol=symbol, num_days=config["days"], seed=seed
-                )
-                result = run_single_backtest(strategy, data, engine)
-                seed_metrics.append(result["metrics"])
+        print_strategy_results(strat_name, metrics, "SENSEX")
 
-            # Average metrics across seeds
-            avg_metrics = {}
-            for key in seed_metrics[0]:
-                values = [m[key] for m in seed_metrics]
-                if isinstance(values[0], (int, float)):
-                    avg_metrics[key] = round(np.mean(values), 2)
-                else:
-                    avg_metrics[key] = values[0]
+        score = compute_composite_score(metrics)
+        all_results.append({
+            "strategy": strat_name,
+            "symbol": "SENSEX",
+            "metrics": metrics,
+            "score": score,
+        })
 
-            avg_metrics["total_trades"] = sum(m["total_trades"] for m in seed_metrics)
+    # ── NIFTY50: Synthetic data (no real data available) ──
+    print(f"\n{'─' * 90}")
+    print(f"  BACKTESTING ON: NIFTY50 (SYNTHETIC — {nifty_config['days']} trading days x {len(nifty_config['seeds'])} seeds)")
+    print(f"{'─' * 90}")
 
-            print_strategy_results(strat_name, avg_metrics, symbol)
+    for strat_name, strategy in strategies.items():
+        seed_metrics = []
 
-            score = compute_composite_score(avg_metrics)
-            all_results.append({
-                "strategy": strat_name,
-                "symbol": symbol,
-                "metrics": avg_metrics,
-                "score": score,
-            })
+        for seed in nifty_config["seeds"]:
+            data = generate_intraday_data(
+                symbol="NIFTY50", num_days=nifty_config["days"], seed=seed
+            )
+            result = run_single_backtest(strategy, data, engine)
+            seed_metrics.append(result["metrics"])
+
+        # Average metrics across seeds
+        avg_metrics = {}
+        for key in seed_metrics[0]:
+            values = [m[key] for m in seed_metrics]
+            if isinstance(values[0], (int, float)):
+                avg_metrics[key] = round(np.mean(values), 2)
+            else:
+                avg_metrics[key] = values[0]
+
+        avg_metrics["total_trades"] = sum(m["total_trades"] for m in seed_metrics)
+
+        print_strategy_results(strat_name, avg_metrics, "NIFTY50")
+
+        score = compute_composite_score(avg_metrics)
+        all_results.append({
+            "strategy": strat_name,
+            "symbol": "NIFTY50",
+            "metrics": avg_metrics,
+            "score": score,
+        })
 
     # ── FULL COMPARISON TABLE ──
     print(f"\n\n{'=' * 90}")
