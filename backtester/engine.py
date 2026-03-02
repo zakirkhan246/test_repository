@@ -25,14 +25,17 @@ class BacktestEngine:
     def __init__(
         self,
         initial_capital: float = 100000.0,
-        position_size_pct: float = 10.0,  # % of capital per trade
+        position_size_pct: float = 10.0,  # % of capital per trade (ignored if fixed_qty set)
         max_trades_per_day: int = 4,
         force_close_candle: int = 72,  # 15:15 (candle 72 of 75)
+        lot_size: int = 0,  # Units per lot (e.g. 10 for SENSEX). 0 = use pct sizing
+        num_lots: int = 0,  # Number of lots to trade. 0 = use pct sizing
     ):
         self.initial_capital = initial_capital
         self.position_size_pct = position_size_pct
         self.max_trades_per_day = max_trades_per_day
         self.force_close_candle = force_close_candle
+        self.fixed_qty = lot_size * num_lots if (lot_size > 0 and num_lots > 0) else 0
 
     def run(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -87,10 +90,13 @@ class BacktestEngine:
                             # Calculate position size
                             risk_per_unit = abs(row["close"] - row["stop_loss"])
                             if risk_per_unit > 0:
-                                trade_capital = capital * (
-                                    self.position_size_pct / 100
-                                )
-                                qty = trade_capital / row["close"]
+                                if self.fixed_qty > 0:
+                                    qty = self.fixed_qty
+                                else:
+                                    trade_capital = capital * (
+                                        self.position_size_pct / 100
+                                    )
+                                    qty = trade_capital / row["close"]
 
                                 open_trade = {
                                     "entry_time": timestamp,
