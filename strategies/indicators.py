@@ -1,8 +1,5 @@
 """
-Technical indicator calculations: MACD, RSI, and Momentum.
-
-All functions operate on pandas Series (typically 'close' prices)
-and return pandas Series/DataFrames aligned to the input index.
+Technical indicator calculations: MACD and ATR.
 """
 
 import pandas as pd
@@ -33,38 +30,6 @@ def compute_macd(
     )
 
 
-def compute_rsi(close: pd.Series, period: int = 14) -> pd.Series:
-    """
-    Compute RSI (Relative Strength Index) using Wilder's smoothing.
-
-    Returns Series with RSI values (0-100).
-    """
-    delta = close.diff()
-
-    gain = delta.where(delta > 0, 0.0)
-    loss = (-delta).where(delta < 0, 0.0)
-
-    # Wilder's smoothing (equivalent to EMA with alpha=1/period)
-    avg_gain = gain.ewm(alpha=1.0 / period, adjust=False).mean()
-    avg_loss = loss.ewm(alpha=1.0 / period, adjust=False).mean()
-
-    rs = avg_gain / avg_loss.replace(0, np.nan)
-    rsi = 100.0 - (100.0 / (1.0 + rs))
-    rsi = rsi.fillna(50.0)  # Neutral when undefined
-
-    return rsi
-
-
-def compute_momentum(close: pd.Series, period: int = 10) -> pd.Series:
-    """
-    Compute Rate of Change (ROC) momentum.
-
-    Returns percentage change over `period` bars.
-    """
-    momentum = ((close - close.shift(period)) / close.shift(period)) * 100.0
-    return momentum
-
-
 def compute_atr(
     high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
 ) -> pd.Series:
@@ -79,26 +44,3 @@ def compute_atr(
     atr = true_range.ewm(alpha=1.0 / period, adjust=False).mean()
 
     return atr
-
-
-def compute_ema(close: pd.Series, period: int = 20) -> pd.Series:
-    """Compute Exponential Moving Average."""
-    return close.ewm(span=period, adjust=False).mean()
-
-
-def compute_vwap(high: pd.Series, low: pd.Series, close: pd.Series,
-                 volume: pd.Series) -> pd.Series:
-    """Compute Volume Weighted Average Price (cumulative within groups)."""
-    typical_price = (high + low + close) / 3.0
-    vwap = (typical_price * volume).cumsum() / volume.cumsum()
-    return vwap
-
-
-def compute_bollinger_bandwidth(close: pd.Series, period: int = 20) -> pd.Series:
-    """Compute Bollinger Bandwidth (volatility squeeze indicator)."""
-    sma = close.rolling(period).mean()
-    std = close.rolling(period).std()
-    upper = sma + 2 * std
-    lower = sma - 2 * std
-    bandwidth = ((upper - lower) / sma) * 100
-    return bandwidth
