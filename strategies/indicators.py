@@ -30,6 +30,13 @@ def compute_macd(
     )
 
 
+def compute_ema(series: pd.Series, period: int = 20) -> pd.Series:
+    """
+    Compute Exponential Moving Average.
+    """
+    return series.ewm(span=period, adjust=False).mean()
+
+
 def compute_atr(
     high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
 ) -> pd.Series:
