@@ -37,6 +37,29 @@ def compute_ema(series: pd.Series, period: int = 20) -> pd.Series:
     return series.ewm(span=period, adjust=False).mean()
 
 
+def compute_vwap(
+    high: pd.Series,
+    low: pd.Series,
+    close: pd.Series,
+    volume: pd.Series,
+    date: pd.Series,
+) -> pd.Series:
+    """
+    Compute intraday VWAP (Volume Weighted Average Price), resetting daily.
+
+    VWAP = cumulative(typical_price × volume) / cumulative(volume)
+    where typical_price = (high + low + close) / 3
+    """
+    typical_price = (high + low + close) / 3
+    tp_vol = typical_price * volume
+
+    cum_tp_vol = tp_vol.groupby(date).cumsum()
+    cum_vol = volume.groupby(date).cumsum()
+
+    vwap = (cum_tp_vol / cum_vol).ffill()
+    return vwap
+
+
 def compute_atr(
     high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
 ) -> pd.Series:

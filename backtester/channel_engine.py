@@ -8,6 +8,7 @@ price position relative to the EMA channel:
 - Long entry when price crosses from below to above
 - Exit when price crosses back
 - Re-entry in opposite direction if confirmed by next candle
+- Optional trend filter: only enter in the direction of the day's trend
 """
 
 import pandas as pd
@@ -22,6 +23,11 @@ class ChannelEngine:
 
     Processes each candle, tracks channel position, and manages
     entries/exits/re-entries based on close vs channel boundaries.
+
+    When use_trend_filter=True, entries are only allowed when the
+    trend_score column agrees with the trade direction:
+    - Long entry requires trend_score >= trend_threshold
+    - Short entry requires trend_score <= -trend_threshold
     """
 
     def __init__(
@@ -33,6 +39,8 @@ class ChannelEngine:
         entry_start_candle: int = 6,   # Skip first 30 min (6 × 5min)
         entry_end_candle: int = 65,    # No new entries after 14:40
         force_close_candle: int = 72,  # Force close at 15:15
+        use_trend_filter: bool = True,
+        trend_threshold: int = 2,
     ):
         self.initial_capital = initial_capital
         self.max_trades_per_day = max_trades_per_day
@@ -40,6 +48,23 @@ class ChannelEngine:
         self.entry_start_candle = entry_start_candle
         self.entry_end_candle = entry_end_candle
         self.force_close_candle = force_close_candle
+        self.use_trend_filter = use_trend_filter
+        self.trend_threshold = trend_threshold
+
+    def _trend_allows(self, row, direction: int) -> bool:
+        """Check if trend score permits entry in the given direction."""
+        if not self.use_trend_filter:
+            return True
+
+        trend = row.get("trend_score", 0) if hasattr(row, "get") else 0
+        if pd.isna(trend):
+            return False
+
+        if direction == 1:
+            return trend >= self.trend_threshold
+        elif direction == -1:
+            return trend <= -self.trend_threshold
+        return False
 
     def run(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -47,10 +72,12 @@ class ChannelEngine:
 
         DataFrame must have columns:
         open, high, low, close, channel_upper, channel_lower, date, candle_idx
+        Optionally: trend_score (required when use_trend_filter=True)
         """
         trades = []
         capital = self.initial_capital
         daily_trade_count = {}
+        trend_blocked = 0
         dates = df["date"].unique()
 
         for date in dates:
@@ -130,41 +157,53 @@ class ChannelEngine:
                     if just_exited != 0 and i == exit_idx + 1:
                         if just_exited == 1 and close < ch_lower:
                             # After long exit, next candle confirms below → SHORT
-                            open_trade = self._open_trade(
-                                row, timestamp, -1, date
-                            )
-                            position = -1
-                            daily_trade_count[date] += 1
-                            entered = True
+                            if self._trend_allows(row, -1):
+                                open_trade = self._open_trade(
+                                    row, timestamp, -1, date
+                                )
+                                position = -1
+                                daily_trade_count[date] += 1
+                                entered = True
+                            else:
+                                trend_blocked += 1
 
                         elif just_exited == -1 and close > ch_upper:
                             # After short exit, next candle confirms above → LONG
-                            open_trade = self._open_trade(
-                                row, timestamp, 1, date
-                            )
-                            position = 1
-                            daily_trade_count[date] += 1
-                            entered = True
+                            if self._trend_allows(row, 1):
+                                open_trade = self._open_trade(
+                                    row, timestamp, 1, date
+                                )
+                                position = 1
+                                daily_trade_count[date] += 1
+                                entered = True
+                            else:
+                                trend_blocked += 1
 
                     # Normal entry: channel crossover
                     elif just_exited == 0 or i > exit_idx + 1:
                         if last_side == "below" and close > ch_upper:
                             # Price crossed from below to above → LONG
-                            open_trade = self._open_trade(
-                                row, timestamp, 1, date
-                            )
-                            position = 1
-                            daily_trade_count[date] += 1
-                            entered = True
+                            if self._trend_allows(row, 1):
+                                open_trade = self._open_trade(
+                                    row, timestamp, 1, date
+                                )
+                                position = 1
+                                daily_trade_count[date] += 1
+                                entered = True
+                            else:
+                                trend_blocked += 1
 
                         elif last_side == "above" and close < ch_lower:
                             # Price crossed from above to below → SHORT
-                            open_trade = self._open_trade(
-                                row, timestamp, -1, date
-                            )
-                            position = -1
-                            daily_trade_count[date] += 1
-                            entered = True
+                            if self._trend_allows(row, -1):
+                                open_trade = self._open_trade(
+                                    row, timestamp, -1, date
+                                )
+                                position = -1
+                                daily_trade_count[date] += 1
+                                entered = True
+                            else:
+                                trend_blocked += 1
 
                     if entered:
                         just_exited = 0
@@ -196,6 +235,7 @@ class ChannelEngine:
             "trades": trades,
             "metrics": metrics,
             "final_capital": round(capital, 2),
+            "trend_blocked": trend_blocked,
         }
 
     def _open_trade(self, row, timestamp, direction, date) -> Dict[str, Any]:
@@ -242,4 +282,3 @@ class ChannelEngine:
             "target": None,
             "duration_candles": row["candle_idx"] - trade["entry_candle_idx"],
         }
-
