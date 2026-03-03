@@ -42,8 +42,8 @@ def load_sensex_data(
     df = pd.read_csv(csv_path, parse_dates=["datetime"])
     df = df.sort_values("datetime").reset_index(drop=True)
 
-    # Drop rows with zero volume — only keep days with real volume data
-    df = df[df["volume"] > 0].copy()
+    # Drop rows with missing price data (keep zero-volume rows — price is valid)
+    df = df.dropna(subset=["open", "high", "low", "close"]).copy()
 
     # Set datetime as index for resampling
     df.set_index("datetime", inplace=True)
