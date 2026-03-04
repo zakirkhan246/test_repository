@@ -132,22 +132,8 @@ def print_results(label, result, initial_capital):
     return weeks
 
 
-def main():
-    print("=" * 74)
-    print("  SENSEX INTRADAY BACKTEST — 20 EMA Channel + Trend Filter")
-    print(f"  Capital: ₹{INITIAL_CAPITAL:,.0f} | {NUM_LOTS} lots × {LOT_SIZE} = {LOT_SIZE * NUM_LOTS} qty/trade")
-    print("  Timeframe: 5-min candles | Channel exit | Re-entry on confirmation")
-    print("  Trend: VWAP + Opening Range + EMA Slope (score >= 2 to trade)")
-    print(f"  Run Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 74)
-
-    # Load real data
-    data = load_sensex_data()
-    n_days = data["date"].nunique()
-    print(f"\n  Data: {n_days} trading days of real SENSEX 5-min candles")
-    print(f"  Range: {data['date'].min()} to {data['date'].max()}")
-
-    # Prepare indicators (includes trend score)
+def run_candle_type(candle_label, data, n_days):
+    """Run the full backtest suite for a given candle type (Regular or Heikin Ashi)."""
     strategy = EMAChannelStrategy(ema_period=20)
     prepared = strategy.prepare(data)
 
@@ -155,7 +141,7 @@ def main():
     trading_candles = prepared[prepared["candle_idx"] >= 6]
     score_counts = trading_candles["trend_score"].value_counts().sort_index()
     print(f"\n{'─' * 74}")
-    print("  TREND SCORE DISTRIBUTION (trading candles only)")
+    print(f"  TREND SCORE DISTRIBUTION — {candle_label} (trading candles only)")
     print(f"{'─' * 74}")
     total_candles = len(trading_candles)
     for score, count in score_counts.items():
@@ -169,13 +155,10 @@ def main():
     neutral_pct = 100 - bullish_pct - bearish_pct
     print(f"\n  Tradeable: {bullish_pct + bearish_pct:.1f}% (Bullish {bullish_pct:.1f}% | Bearish {bearish_pct:.1f}%) | Neutral: {neutral_pct:.1f}%")
 
-    # ═══════════════════════════════════════════════════════════
-    # Run all three variants: threshold=1, threshold=2, no filter
-    # ═══════════════════════════════════════════════════════════
+    # Run with trend filter (threshold=2) and without
     runs = {}
     for label, use_filter, threshold in [
-        ("TREND >= 1 (relaxed)", True, 1),
-        ("TREND >= 2 (strict)", True, 2),
+        ("WITH TREND FILTER", True, 2),
         ("NO FILTER (baseline)", False, 2),
     ]:
         engine = ChannelEngine(
@@ -187,37 +170,112 @@ def main():
             trend_threshold=threshold,
         )
         result = engine.run(prepared)
-        weeks = print_results(label, result, INITIAL_CAPITAL)
+        run_label = f"{candle_label} — {label}"
+        weeks = print_results(run_label, result, INITIAL_CAPITAL)
         runs[label] = {"result": result, "weeks": weeks}
 
-    # ═══════════════════════════════════════════════════════════
-    # Side-by-side comparison of all three
-    # ═══════════════════════════════════════════════════════════
-    labels = list(runs.keys())
-    metrics = [runs[l]["result"]["metrics"] for l in labels]
-    results = [runs[l]["result"] for l in labels]
+    return runs
 
-    print(f"\n{'═' * 90}")
-    print("  HEAD-TO-HEAD COMPARISON")
-    print(f"{'═' * 90}")
-    print(f"  {'Metric':<22} {'Trend >= 1':>18} {'Trend >= 2':>18} {'No Filter':>18}")
-    print(f"  {'─' * 22} {'─' * 18} {'─' * 18} {'─' * 18}")
-    print(f"  {'Total Trades':<22} {metrics[0]['total_trades']:>18} {metrics[1]['total_trades']:>18} {metrics[2]['total_trades']:>18}")
-    print(f"  {'Wins':<22} {int(metrics[0]['total_trades'] * metrics[0]['win_rate'] / 100):>18} {int(metrics[1]['total_trades'] * metrics[1]['win_rate'] / 100):>18} {int(metrics[2]['total_trades'] * metrics[2]['win_rate'] / 100):>18}")
-    print(f"  {'Win Rate':<22} {metrics[0]['win_rate']:>17.1f}% {metrics[1]['win_rate']:>17.1f}% {metrics[2]['win_rate']:>17.1f}%")
-    print(f"  {'Profit Factor':<22} {metrics[0]['profit_factor']:>18.2f} {metrics[1]['profit_factor']:>18.2f} {metrics[2]['profit_factor']:>18.2f}")
-    print(f"  {'Net P&L':<22} {'₹{:+,.0f}'.format(metrics[0]['net_pnl']):>18} {'₹{:+,.0f}'.format(metrics[1]['net_pnl']):>18} {'₹{:+,.0f}'.format(metrics[2]['net_pnl']):>18}")
-    print(f"  {'Final Capital':<22} {'₹{:,.0f}'.format(results[0]['final_capital']):>18} {'₹{:,.0f}'.format(results[1]['final_capital']):>18} {'₹{:,.0f}'.format(results[2]['final_capital']):>18}")
-    print(f"  {'Max Drawdown':<22} {metrics[0]['max_drawdown_pct']:>17.2f}% {metrics[1]['max_drawdown_pct']:>17.2f}% {metrics[2]['max_drawdown_pct']:>17.2f}%")
-    print(f"  {'Sharpe Estimate':<22} {metrics[0]['sharpe_estimate']:>18.2f} {metrics[1]['sharpe_estimate']:>18.2f} {metrics[2]['sharpe_estimate']:>18.2f}")
-    print(f"  {'Avg Win':<22} {'₹{:+,.0f}'.format(metrics[0]['avg_win_pnl']):>18} {'₹{:+,.0f}'.format(metrics[1]['avg_win_pnl']):>18} {'₹{:+,.0f}'.format(metrics[2]['avg_win_pnl']):>18}")
-    print(f"  {'Avg Loss':<22} {'₹{:+,.0f}'.format(metrics[0]['avg_loss_pnl']):>18} {'₹{:+,.0f}'.format(metrics[1]['avg_loss_pnl']):>18} {'₹{:+,.0f}'.format(metrics[2]['avg_loss_pnl']):>18}")
-    rr0 = abs(metrics[0]['avg_win_pnl'] / metrics[0]['avg_loss_pnl']) if metrics[0]['avg_loss_pnl'] != 0 else 0
-    rr1 = abs(metrics[1]['avg_win_pnl'] / metrics[1]['avg_loss_pnl']) if metrics[1]['avg_loss_pnl'] != 0 else 0
-    rr2 = abs(metrics[2]['avg_win_pnl'] / metrics[2]['avg_loss_pnl']) if metrics[2]['avg_loss_pnl'] != 0 else 0
-    print(f"  {'Avg R:R':<22} {rr0:>17.2f}x {rr1:>17.2f}x {rr2:>17.2f}x")
-    print(f"  {'Max Consec Losses':<22} {metrics[0]['max_consecutive_losses']:>18} {metrics[1]['max_consecutive_losses']:>18} {metrics[2]['max_consecutive_losses']:>18}")
-    print(f"  {'Trend Blocked':<22} {results[0].get('trend_blocked', 0):>18} {results[1].get('trend_blocked', 0):>18} {'N/A':>18}")
+
+def print_comparison_table(reg_runs, ha_runs):
+    """Print head-to-head comparison: Regular vs Heikin Ashi candles."""
+    reg_f = reg_runs["WITH TREND FILTER"]["result"]
+    reg_nf = reg_runs["NO FILTER (baseline)"]["result"]
+    ha_f = ha_runs["WITH TREND FILTER"]["result"]
+    ha_nf = ha_runs["NO FILTER (baseline)"]["result"]
+
+    all_results = [
+        ("Reg+Filter", reg_f),
+        ("Reg NoFilter", reg_nf),
+        ("HA+Filter", ha_f),
+        ("HA NoFilter", ha_nf),
+    ]
+    ms = [(label, r["metrics"], r) for label, r in all_results]
+
+    print(f"\n{'═' * 98}")
+    print("  REGULAR vs HEIKIN ASHI — HEAD-TO-HEAD COMPARISON")
+    print(f"{'═' * 98}")
+    print(f"  {'Metric':<22} {'Reg+Filter':>16} {'Reg NoFilter':>16} {'HA+Filter':>16} {'HA NoFilter':>16}")
+    print(f"  {'─' * 22} {'─' * 16} {'─' * 16} {'─' * 16} {'─' * 16}")
+
+    def row(name, key, fmt="d"):
+        vals = [m[key] for _, m, _ in ms]
+        if fmt == "d":
+            print(f"  {name:<22} {vals[0]:>16} {vals[1]:>16} {vals[2]:>16} {vals[3]:>16}")
+        elif fmt == "pct":
+            print(f"  {name:<22} {vals[0]:>15.1f}% {vals[1]:>15.1f}% {vals[2]:>15.1f}% {vals[3]:>15.1f}%")
+        elif fmt == "f2":
+            print(f"  {name:<22} {vals[0]:>16.2f} {vals[1]:>16.2f} {vals[2]:>16.2f} {vals[3]:>16.2f}")
+        elif fmt == "inr":
+            print(f"  {name:<22} {'₹{:+,.0f}'.format(vals[0]):>16} {'₹{:+,.0f}'.format(vals[1]):>16} {'₹{:+,.0f}'.format(vals[2]):>16} {'₹{:+,.0f}'.format(vals[3]):>16}")
+
+    row("Total Trades", "total_trades", "d")
+
+    # Wins row (computed)
+    wins = [int(m["total_trades"] * m["win_rate"] / 100) for _, m, _ in ms]
+    print(f"  {'Wins':<22} {wins[0]:>16} {wins[1]:>16} {wins[2]:>16} {wins[3]:>16}")
+
+    row("Win Rate", "win_rate", "pct")
+    row("Profit Factor", "profit_factor", "f2")
+    row("Net P&L", "net_pnl", "inr")
+
+    # Final capital
+    caps = [r["final_capital"] for _, _, r in ms]
+    print(f"  {'Final Capital':<22} {'₹{:,.0f}'.format(caps[0]):>16} {'₹{:,.0f}'.format(caps[1]):>16} {'₹{:,.0f}'.format(caps[2]):>16} {'₹{:,.0f}'.format(caps[3]):>16}")
+
+    row("Max Drawdown", "max_drawdown_pct", "pct")
+    row("Sharpe Estimate", "sharpe_estimate", "f2")
+    row("Avg Win", "avg_win_pnl", "inr")
+    row("Avg Loss", "avg_loss_pnl", "inr")
+
+    # R:R
+    rrs = [abs(m["avg_win_pnl"] / m["avg_loss_pnl"]) if m["avg_loss_pnl"] != 0 else 0 for _, m, _ in ms]
+    print(f"  {'Avg R:R':<22} {rrs[0]:>15.2f}x {rrs[1]:>15.2f}x {rrs[2]:>15.2f}x {rrs[3]:>15.2f}x")
+
+    row("Max Consec Losses", "max_consecutive_losses", "d")
+
+    # Trend blocked
+    blocked = [r.get("trend_blocked", 0) for _, _, r in ms]
+    print(f"  {'Trend Blocked':<22} {blocked[0]:>16} {'N/A':>16} {blocked[2]:>16} {'N/A':>16}")
+
+
+def main():
+    print("=" * 74)
+    print("  SENSEX INTRADAY BACKTEST — 20 EMA Channel + Trend Filter")
+    print(f"  Capital: ₹{INITIAL_CAPITAL:,.0f} | {NUM_LOTS} lots × {LOT_SIZE} = {LOT_SIZE * NUM_LOTS} qty/trade")
+    print("  Timeframe: 5-min candles | Channel exit | Re-entry on confirmation")
+    print("  Trend: VWAP + Opening Range + EMA Slope (score >= 2 to trade)")
+    print("  Candle types: Regular OHLC vs Heikin Ashi")
+    print(f"  Run Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 74)
+
+    # Load both candle types
+    data_regular = load_sensex_data()
+    data_ha = load_sensex_data(heikin_ashi=True)
+    n_days = data_regular["date"].nunique()
+    print(f"\n  Data: {n_days} trading days of real SENSEX 5-min candles")
+    print(f"  Range: {data_regular['date'].min()} to {data_regular['date'].max()}")
+
+    # ═══════════════════════════════════════════════════════════
+    # Run Regular candles
+    # ═══════════════════════════════════════════════════════════
+    print(f"\n{'═' * 74}")
+    print("  PART 1: REGULAR CANDLES")
+    print(f"{'═' * 74}")
+    reg_runs = run_candle_type("REGULAR", data_regular, n_days)
+
+    # ═══════════════════════════════════════════════════════════
+    # Run Heikin Ashi candles
+    # ═══════════════════════════════════════════════════════════
+    print(f"\n{'═' * 74}")
+    print("  PART 2: HEIKIN ASHI CANDLES")
+    print(f"{'═' * 74}")
+    ha_runs = run_candle_type("HEIKIN ASHI", data_ha, n_days)
+
+    # ═══════════════════════════════════════════════════════════
+    # Final head-to-head: Regular vs Heikin Ashi
+    # ═══════════════════════════════════════════════════════════
+    print_comparison_table(reg_runs, ha_runs)
 
     print(f"\n{'─' * 74}")
     print("  RISK DISCLAIMER: Educational/research only.")
@@ -236,25 +294,28 @@ def main():
             "qty_per_trade": LOT_SIZE * NUM_LOTS,
             "ema_period": 20,
             "trend_filter": "VWAP + Opening Range + EMA Channel Slope",
+            "trend_threshold": 2,
             "max_trades_per_day": 4,
             "data_interval": "5min",
             "data_source": "real SENSEX 1-min resampled to 5-min",
             "trading_days": n_days,
         },
     }
-    for label in labels:
-        r = runs[label]["result"]
-        save_data[label] = {
-            "weekly_pnl": runs[label]["weeks"],
-            "metrics": r["metrics"],
-            "final_capital": r["final_capital"],
-            "trend_blocked": r.get("trend_blocked", 0),
-        }
+    for candle_type, runs in [("regular", reg_runs), ("heikin_ashi", ha_runs)]:
+        for label, run_data in runs.items():
+            r = run_data["result"]
+            key = f"{candle_type}_{label}"
+            save_data[key] = {
+                "weekly_pnl": run_data["weeks"],
+                "metrics": r["metrics"],
+                "final_capital": r["final_capital"],
+                "trend_blocked": r.get("trend_blocked", 0),
+            }
     with open(output_path, "w") as f:
         json.dump(save_data, f, indent=2, default=str)
 
     print(f"  Results saved to: {output_path}")
-    return runs["TREND >= 1 (relaxed)"]["result"]
+    return ha_runs["WITH TREND FILTER"]["result"]
 
 
 if __name__ == "__main__":
