@@ -170,59 +170,54 @@ def main():
     print(f"\n  Tradeable: {bullish_pct + bearish_pct:.1f}% (Bullish {bullish_pct:.1f}% | Bearish {bearish_pct:.1f}%) | Neutral: {neutral_pct:.1f}%")
 
     # ═══════════════════════════════════════════════════════════
-    # Run 1: WITH trend filter
+    # Run all three variants: threshold=1, threshold=2, no filter
     # ═══════════════════════════════════════════════════════════
-    engine_filtered = ChannelEngine(
-        initial_capital=INITIAL_CAPITAL,
-        max_trades_per_day=4,
-        lot_size=LOT_SIZE,
-        num_lots=NUM_LOTS,
-        use_trend_filter=True,
-        trend_threshold=2,
-    )
-    result_filtered = engine_filtered.run(prepared)
-
-    weeks_filtered = print_results(
-        "WITH TREND FILTER", result_filtered, INITIAL_CAPITAL
-    )
-
-    # ═══════════════════════════════════════════════════════════
-    # Run 2: WITHOUT trend filter (baseline comparison)
-    # ═══════════════════════════════════════════════════════════
-    engine_raw = ChannelEngine(
-        initial_capital=INITIAL_CAPITAL,
-        max_trades_per_day=4,
-        lot_size=LOT_SIZE,
-        num_lots=NUM_LOTS,
-        use_trend_filter=False,
-    )
-    result_raw = engine_raw.run(prepared)
-
-    weeks_raw = print_results(
-        "WITHOUT TREND FILTER (baseline)", result_raw, INITIAL_CAPITAL
-    )
+    runs = {}
+    for label, use_filter, threshold in [
+        ("TREND >= 1 (relaxed)", True, 1),
+        ("TREND >= 2 (strict)", True, 2),
+        ("NO FILTER (baseline)", False, 2),
+    ]:
+        engine = ChannelEngine(
+            initial_capital=INITIAL_CAPITAL,
+            max_trades_per_day=4,
+            lot_size=LOT_SIZE,
+            num_lots=NUM_LOTS,
+            use_trend_filter=use_filter,
+            trend_threshold=threshold,
+        )
+        result = engine.run(prepared)
+        weeks = print_results(label, result, INITIAL_CAPITAL)
+        runs[label] = {"result": result, "weeks": weeks}
 
     # ═══════════════════════════════════════════════════════════
-    # Side-by-side comparison
+    # Side-by-side comparison of all three
     # ═══════════════════════════════════════════════════════════
-    mf = result_filtered["metrics"]
-    mr = result_raw["metrics"]
+    labels = list(runs.keys())
+    metrics = [runs[l]["result"]["metrics"] for l in labels]
+    results = [runs[l]["result"] for l in labels]
 
-    print(f"\n{'═' * 74}")
+    print(f"\n{'═' * 90}")
     print("  HEAD-TO-HEAD COMPARISON")
-    print(f"{'═' * 74}")
-    print(f"  {'Metric':<25} {'With Filter':>18} {'Without Filter':>18}")
-    print(f"  {'─' * 25} {'─' * 18} {'─' * 18}")
-    print(f"  {'Total Trades':<25} {mf['total_trades']:>18} {mr['total_trades']:>18}")
-    print(f"  {'Win Rate':<25} {mf['win_rate']:>17.1f}% {mr['win_rate']:>17.1f}%")
-    print(f"  {'Profit Factor':<25} {mf['profit_factor']:>18.2f} {mr['profit_factor']:>18.2f}")
-    print(f"  {'Net P&L':<25} {'₹{:+,.2f}'.format(mf['net_pnl']):>18} {'₹{:+,.2f}'.format(mr['net_pnl']):>18}")
-    print(f"  {'Final Capital':<25} {'₹{:,.2f}'.format(result_filtered['final_capital']):>18} {'₹{:,.2f}'.format(result_raw['final_capital']):>18}")
-    print(f"  {'Max Drawdown':<25} {mf['max_drawdown_pct']:>17.2f}% {mr['max_drawdown_pct']:>17.2f}%")
-    print(f"  {'Sharpe Estimate':<25} {mf['sharpe_estimate']:>18.2f} {mr['sharpe_estimate']:>18.2f}")
-    print(f"  {'Avg Win':<25} {'₹{:+,.2f}'.format(mf['avg_win_pnl']):>18} {'₹{:+,.2f}'.format(mr['avg_win_pnl']):>18}")
-    print(f"  {'Avg Loss':<25} {'₹{:+,.2f}'.format(mf['avg_loss_pnl']):>18} {'₹{:+,.2f}'.format(mr['avg_loss_pnl']):>18}")
-    print(f"  {'Trend Blocked':<25} {result_filtered.get('trend_blocked', 0):>18} {'N/A':>18}")
+    print(f"{'═' * 90}")
+    print(f"  {'Metric':<22} {'Trend >= 1':>18} {'Trend >= 2':>18} {'No Filter':>18}")
+    print(f"  {'─' * 22} {'─' * 18} {'─' * 18} {'─' * 18}")
+    print(f"  {'Total Trades':<22} {metrics[0]['total_trades']:>18} {metrics[1]['total_trades']:>18} {metrics[2]['total_trades']:>18}")
+    print(f"  {'Wins':<22} {int(metrics[0]['total_trades'] * metrics[0]['win_rate'] / 100):>18} {int(metrics[1]['total_trades'] * metrics[1]['win_rate'] / 100):>18} {int(metrics[2]['total_trades'] * metrics[2]['win_rate'] / 100):>18}")
+    print(f"  {'Win Rate':<22} {metrics[0]['win_rate']:>17.1f}% {metrics[1]['win_rate']:>17.1f}% {metrics[2]['win_rate']:>17.1f}%")
+    print(f"  {'Profit Factor':<22} {metrics[0]['profit_factor']:>18.2f} {metrics[1]['profit_factor']:>18.2f} {metrics[2]['profit_factor']:>18.2f}")
+    print(f"  {'Net P&L':<22} {'₹{:+,.0f}'.format(metrics[0]['net_pnl']):>18} {'₹{:+,.0f}'.format(metrics[1]['net_pnl']):>18} {'₹{:+,.0f}'.format(metrics[2]['net_pnl']):>18}")
+    print(f"  {'Final Capital':<22} {'₹{:,.0f}'.format(results[0]['final_capital']):>18} {'₹{:,.0f}'.format(results[1]['final_capital']):>18} {'₹{:,.0f}'.format(results[2]['final_capital']):>18}")
+    print(f"  {'Max Drawdown':<22} {metrics[0]['max_drawdown_pct']:>17.2f}% {metrics[1]['max_drawdown_pct']:>17.2f}% {metrics[2]['max_drawdown_pct']:>17.2f}%")
+    print(f"  {'Sharpe Estimate':<22} {metrics[0]['sharpe_estimate']:>18.2f} {metrics[1]['sharpe_estimate']:>18.2f} {metrics[2]['sharpe_estimate']:>18.2f}")
+    print(f"  {'Avg Win':<22} {'₹{:+,.0f}'.format(metrics[0]['avg_win_pnl']):>18} {'₹{:+,.0f}'.format(metrics[1]['avg_win_pnl']):>18} {'₹{:+,.0f}'.format(metrics[2]['avg_win_pnl']):>18}")
+    print(f"  {'Avg Loss':<22} {'₹{:+,.0f}'.format(metrics[0]['avg_loss_pnl']):>18} {'₹{:+,.0f}'.format(metrics[1]['avg_loss_pnl']):>18} {'₹{:+,.0f}'.format(metrics[2]['avg_loss_pnl']):>18}")
+    rr0 = abs(metrics[0]['avg_win_pnl'] / metrics[0]['avg_loss_pnl']) if metrics[0]['avg_loss_pnl'] != 0 else 0
+    rr1 = abs(metrics[1]['avg_win_pnl'] / metrics[1]['avg_loss_pnl']) if metrics[1]['avg_loss_pnl'] != 0 else 0
+    rr2 = abs(metrics[2]['avg_win_pnl'] / metrics[2]['avg_loss_pnl']) if metrics[2]['avg_loss_pnl'] != 0 else 0
+    print(f"  {'Avg R:R':<22} {rr0:>17.2f}x {rr1:>17.2f}x {rr2:>17.2f}x")
+    print(f"  {'Max Consec Losses':<22} {metrics[0]['max_consecutive_losses']:>18} {metrics[1]['max_consecutive_losses']:>18} {metrics[2]['max_consecutive_losses']:>18}")
+    print(f"  {'Trend Blocked':<22} {results[0].get('trend_blocked', 0):>18} {results[1].get('trend_blocked', 0):>18} {'N/A':>18}")
 
     print(f"\n{'─' * 74}")
     print("  RISK DISCLAIMER: Educational/research only.")
@@ -231,38 +226,35 @@ def main():
 
     # Save results
     output_path = os.path.join(os.path.dirname(__file__), "ema_backtest_results.json")
+    save_data = {
+        "run_date": datetime.now().isoformat(),
+        "strategy": "20 EMA Channel + Trend Filter",
+        "config": {
+            "initial_capital": INITIAL_CAPITAL,
+            "lot_size": LOT_SIZE,
+            "num_lots": NUM_LOTS,
+            "qty_per_trade": LOT_SIZE * NUM_LOTS,
+            "ema_period": 20,
+            "trend_filter": "VWAP + Opening Range + EMA Channel Slope",
+            "max_trades_per_day": 4,
+            "data_interval": "5min",
+            "data_source": "real SENSEX 1-min resampled to 5-min",
+            "trading_days": n_days,
+        },
+    }
+    for label in labels:
+        r = runs[label]["result"]
+        save_data[label] = {
+            "weekly_pnl": runs[label]["weeks"],
+            "metrics": r["metrics"],
+            "final_capital": r["final_capital"],
+            "trend_blocked": r.get("trend_blocked", 0),
+        }
     with open(output_path, "w") as f:
-        json.dump({
-            "run_date": datetime.now().isoformat(),
-            "strategy": "20 EMA Channel + Trend Filter",
-            "config": {
-                "initial_capital": INITIAL_CAPITAL,
-                "lot_size": LOT_SIZE,
-                "num_lots": NUM_LOTS,
-                "qty_per_trade": LOT_SIZE * NUM_LOTS,
-                "ema_period": 20,
-                "trend_filter": "VWAP + Opening Range + EMA Channel Slope",
-                "trend_threshold": 2,
-                "max_trades_per_day": 4,
-                "data_interval": "5min",
-                "data_source": "real SENSEX 1-min resampled to 5-min",
-                "trading_days": n_days,
-            },
-            "with_trend_filter": {
-                "weekly_pnl": weeks_filtered,
-                "metrics": mf,
-                "final_capital": result_filtered["final_capital"],
-                "trend_blocked": result_filtered.get("trend_blocked", 0),
-            },
-            "without_trend_filter": {
-                "weekly_pnl": weeks_raw,
-                "metrics": mr,
-                "final_capital": result_raw["final_capital"],
-            },
-        }, f, indent=2, default=str)
+        json.dump(save_data, f, indent=2, default=str)
 
     print(f"  Results saved to: {output_path}")
-    return result_filtered
+    return runs["TREND >= 1 (relaxed)"]["result"]
 
 
 if __name__ == "__main__":
