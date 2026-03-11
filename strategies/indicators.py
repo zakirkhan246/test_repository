@@ -1,5 +1,5 @@
 """
-Technical indicator calculations: MACD and ATR.
+Technical indicator calculations: MACD, ATR, RSI.
 """
 
 import pandas as pd
@@ -58,6 +58,25 @@ def compute_vwap(
 
     vwap = (cum_tp_vol / cum_vol).ffill()
     return vwap
+
+
+def compute_rsi(close: pd.Series, period: int = 14) -> pd.Series:
+    """
+    Compute RSI (Relative Strength Index).
+
+    RSI = 100 - (100 / (1 + RS))
+    where RS = EMA(gains) / EMA(losses) over `period` bars.
+    """
+    delta = close.diff()
+    gains = delta.clip(lower=0)
+    losses = (-delta).clip(lower=0)
+
+    avg_gain = gains.ewm(alpha=1.0 / period, adjust=False).mean()
+    avg_loss = losses.ewm(alpha=1.0 / period, adjust=False).mean()
+
+    rs = avg_gain / avg_loss.replace(0, np.nan)
+    rsi = 100 - (100 / (1 + rs))
+    return rsi
 
 
 def compute_atr(
