@@ -136,10 +136,12 @@ class RenkoBacktestEngine:
     Brick-by-brick backtest engine for the Renko Pullback strategy.
 
     Entry:   At close of signal brick
-    SL:      1 opposite brick  (risk = 1 brick)
-    Target:  Trailing — exit on 2 consecutive opposite bricks
-    Exit:    Also force-close at EOD (intraday only)
-    Re-entry: Must wait for new 4-brick trend after exit
+    SL:      Fixed price-based stop = 1 brick size (40 pts) from entry.
+             Checked on every brick — if the brick's adverse price
+             breaches entry ± brick_size, exit at the SL price.
+    Target:  Trailing — exit when 2 consecutive opposite bricks appear.
+    Exit:    Also force-close at EOD (intraday only).
+    Re-entry: Must wait for new 4-brick trend after exit.
     """
 
     def __init__(
@@ -162,24 +164,25 @@ class RenkoBacktestEngine:
         trades: List[Dict] = []
         dirs = bricks["direction"].values
         signals = bricks["signal"].values
+        opens = bricks["open"].values
         closes = bricks["close"].values
         dates = bricks["date"].values
         timestamps = bricks["timestamp"].values
         n = len(bricks)
 
         open_trade = None
-        opposite_count = 0       # consecutive opposite bricks since entry
+        opposite_count = 0       # consecutive opposite bricks
         waiting_for_new_trend = False
 
         for i in range(n):
             cur_dir = dirs[i]
+            cur_open = opens[i]
             cur_close = closes[i]
             cur_date = dates[i]
             cur_ts = timestamps[i]
 
             # ── Force close at end of day ──
             if open_trade is not None and cur_date != open_trade["date"]:
-                # Close at previous brick's close (last brick of prev day)
                 prev_close = closes[i - 1]
                 prev_ts = timestamps[i - 1]
                 pnl_pts = (prev_close - open_trade["entry_price"]) * open_trade["direction"]
@@ -191,53 +194,77 @@ class RenkoBacktestEngine:
             # ── Manage open trade ──
             if open_trade is not None:
                 trade_dir = open_trade["direction"]
+                entry_price = open_trade["entry_price"]
+                sl_price = open_trade["sl_price"]
 
+                # Step A: Check fixed price-based SL on this brick.
+                # For a long, the worst price on an opposite (red) brick
+                # is the close; on a green brick it's the open.
+                # Since Renko bricks only have open/close (no wicks),
+                # the adverse price is min(open, close) for longs,
+                # max(open, close) for shorts.
+                if trade_dir == 1:
+                    adverse = min(cur_open, cur_close)
+                    if adverse <= sl_price:
+                        pnl_pts = sl_price - entry_price  # = -brick_size
+                        trades.append(self._close_trade(
+                            open_trade, sl_price, cur_ts, pnl_pts, "STOP_LOSS"))
+                        open_trade = None
+                        opposite_count = 0
+                        waiting_for_new_trend = True
+                        continue
+                else:  # short
+                    adverse = max(cur_open, cur_close)
+                    if adverse >= sl_price:
+                        pnl_pts = entry_price - sl_price  # = -brick_size
+                        trades.append(self._close_trade(
+                            open_trade, sl_price, cur_ts, pnl_pts, "STOP_LOSS"))
+                        open_trade = None
+                        opposite_count = 0
+                        waiting_for_new_trend = True
+                        continue
+
+                # Step B: Track consecutive opposite bricks for trailing exit
                 if cur_dir == trade_dir:
-                    # Brick in our favor — reset opposite counter
                     opposite_count = 0
                 else:
-                    # Opposite brick
                     opposite_count += 1
 
-                    # SL: 1 opposite brick
-                    if opposite_count == 1:
-                        pnl_pts = (cur_close - open_trade["entry_price"]) * trade_dir
-                        trades.append(self._close_trade(open_trade, cur_close, cur_ts, pnl_pts, "STOP_LOSS"))
-                        open_trade = None
-                        opposite_count = 0
-                        waiting_for_new_trend = True
-                        continue
-
-                    # Trailing exit: 2 consecutive opposite bricks
-                    if opposite_count >= 2:
-                        pnl_pts = (cur_close - open_trade["entry_price"]) * trade_dir
-                        trades.append(self._close_trade(open_trade, cur_close, cur_ts, pnl_pts, "TRAILING_EXIT"))
-                        open_trade = None
-                        opposite_count = 0
-                        waiting_for_new_trend = True
-                        continue
+                # Trailing exit: 2 consecutive opposite bricks
+                if opposite_count >= 2:
+                    pnl_pts = (cur_close - entry_price) * trade_dir
+                    trades.append(self._close_trade(
+                        open_trade, cur_close, cur_ts, pnl_pts, "TRAILING_EXIT"))
+                    open_trade = None
+                    opposite_count = 0
+                    waiting_for_new_trend = True
+                    continue
 
             # ── Check for new entry ──
             if open_trade is None and signals[i] != 0:
                 if not waiting_for_new_trend:
+                    trade_dir = int(signals[i])
+                    sl = cur_close - self.brick_size if trade_dir == 1 else cur_close + self.brick_size
                     open_trade = {
                         "entry_price": cur_close,
                         "entry_time": cur_ts,
-                        "direction": int(signals[i]),
+                        "direction": trade_dir,
                         "date": cur_date,
+                        "sl_price": sl,
                     }
                     opposite_count = 0
 
-            # ── Reset re-entry lock when we see a fresh 4-brick trend ──
+            # ── Reset re-entry lock when a fresh signal appears ──
             if waiting_for_new_trend and signals[i] != 0:
-                # A signal means pattern was detected = new valid trend
-                # Allow this entry
                 if open_trade is None:
+                    trade_dir = int(signals[i])
+                    sl = cur_close - self.brick_size if trade_dir == 1 else cur_close + self.brick_size
                     open_trade = {
                         "entry_price": cur_close,
                         "entry_time": cur_ts,
-                        "direction": int(signals[i]),
+                        "direction": trade_dir,
                         "date": cur_date,
+                        "sl_price": sl,
                     }
                     opposite_count = 0
                     waiting_for_new_trend = False
