@@ -2,10 +2,11 @@
 """
 Backtest runner for Candle Range Theory (CRT) strategy on real SENSEX data.
 
-Strategy: Detect liquidity sweeps of the previous day's high/low,
+Strategy: Detect liquidity sweeps of the previous 1-hour candle's high/low,
 enter in the opposite direction after confirmed false breakout.
 
-SL at the sweep extreme, target at the opposite end of prev day's range.
+SL at the sweep extreme, target at the opposite end of prev hour's range.
+Resets every hour — each hourly block uses the prior hour as its range.
 
 Tests both Regular and Heikin Ashi candles side-by-side.
 
@@ -143,13 +144,24 @@ def run_candle_type(candle_label, data):
 
     # Sweep stats
     days_with_signals = prepared[prepared["signal"] != 0]["date"].nunique()
-    total_days = prepared["date"].nunique() - 1  # minus first day (no prev data)
+    total_days = prepared["date"].nunique()
     print(f"  Sweep days: {days_with_signals} / {total_days} trading days ({days_with_signals / total_days * 100:.1f}%)")
+
+    # Hourly block distribution
+    signal_df = prepared[prepared["signal"] != 0]
+    if len(signal_df) > 0:
+        block_dist = signal_df["hour_block"].value_counts().sort_index()
+        print(f"  Signals per hourly block:")
+        block_labels = ["9:15-10:15", "10:15-11:15", "11:15-12:15",
+                        "12:15-13:15", "13:15-14:15", "14:15-15:15"]
+        for block, count in block_dist.items():
+            lbl = block_labels[int(block)] if int(block) < len(block_labels) else f"Block {int(block)}"
+            print(f"    {lbl}: {count:>4} signals")
 
     # Run backtest (pure CRT, no filters)
     engine = BacktestEngine(
         initial_capital=INITIAL_CAPITAL,
-        max_trades_per_day=2,  # Max 1 per direction
+        max_trades_per_day=10,  # Multiple hourly blocks can fire
         lot_size=LOT_SIZE,
         num_lots=NUM_LOTS,
     )
@@ -217,9 +229,9 @@ def main():
     print("=" * 74)
     print("  SENSEX INTRADAY BACKTEST — Candle Range Theory (CRT)")
     print(f"  Capital: ₹{INITIAL_CAPITAL:,.0f} | {NUM_LOTS} lots × {LOT_SIZE} = {LOT_SIZE * NUM_LOTS} qty/trade")
-    print("  Range: Previous day's high/low")
+    print("  Range: Previous 1-hour candle's high/low (resets hourly)")
     print("  Entry: Reversal after confirmed liquidity sweep")
-    print("  SL: Sweep extreme | Target: Opposite end of prev day range")
+    print("  SL: Sweep extreme | Target: Opposite end of prev hour range")
     print("  No trend filter — pure CRT concept")
     print("  Candle types: Regular OHLC vs Heikin Ashi")
     print(f"  Run Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
@@ -268,12 +280,13 @@ def main():
             "lot_size": LOT_SIZE,
             "num_lots": NUM_LOTS,
             "qty_per_trade": LOT_SIZE * NUM_LOTS,
-            "range": "previous day high/low",
-            "entry": "reversal after confirmed liquidity sweep",
+            "range": "previous 1-hour candle high/low (resets hourly)",
+            "candles_per_hour": 12,
+            "entry": "reversal after confirmed liquidity sweep of prev hour",
             "sl": "sweep extreme (max high or min low during sweep)",
-            "target": "opposite end of previous day range",
+            "target": "opposite end of previous hour range",
             "trend_filter": "none",
-            "max_trades_per_day": 2,
+            "max_trades_per_day": 10,
             "data_interval": "5min",
             "data_source": "real SENSEX 1-min resampled to 5-min",
             "trading_days": n_days,
