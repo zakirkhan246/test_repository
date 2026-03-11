@@ -1,0 +1,2129 @@
+{
+  "run_date": "2026-03-11T00:59:25.839209",
+  "strategy": "Candle Range Theory (CRT)",
+  "config": {
+    "initial_capital": 20000.0,
+    "lot_size": 10,
+    "num_lots": 2,
+    "qty_per_trade": 20,
+    "range": "previous day high/low",
+    "entry": "reversal after confirmed liquidity sweep",
+    "sl": "sweep extreme (max high or min low during sweep)",
+    "target": "opposite end of previous day range",
+    "trend_filter": "none",
+    "max_trades_per_day": 2,
+    "data_interval": "5min",
+    "data_source": "real SENSEX 1-min resampled to 5-min",
+    "trading_days": 490
+  },
+  "regular": {
+    "weekly_pnl": [
+      {
+        "week": "04-Mar-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -7639.0,
+        "capital": 12361.0
+      },
+      {
+        "week": "11-Mar-2024",
+        "days": 5,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": 21606.8,
+        "capital": 33967.8
+      },
+      {
+        "week": "18-Mar-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -8482.6,
+        "capital": 25485.2
+      },
+      {
+        "week": "25-Mar-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -1494.0,
+        "capital": 23991.2
+      },
+      {
+        "week": "01-Apr-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 3,
+        "losses": 2,
+        "win_rate": "60%",
+        "pnl": 23003.2,
+        "capital": 46994.4
+      },
+      {
+        "week": "08-Apr-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -7214.37,
+        "capital": 39780.03
+      },
+      {
+        "week": "15-Apr-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 8415.25,
+        "capital": 48195.28
+      },
+      {
+        "week": "22-Apr-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 8962.79,
+        "capital": 57158.07
+      },
+      {
+        "week": "29-Apr-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 1,
+        "losses": 0,
+        "win_rate": "100%",
+        "pnl": 7399.25,
+        "capital": 64557.32
+      },
+      {
+        "week": "06-May-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -4608.53,
+        "capital": 59948.79
+      },
+      {
+        "week": "13-May-2024",
+        "days": 6,
+        "trades": 7,
+        "wins": 0,
+        "losses": 7,
+        "win_rate": "0%",
+        "pnl": 5487.05,
+        "capital": 65435.84
+      },
+      {
+        "week": "20-May-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -6744.31,
+        "capital": 58691.53
+      },
+      {
+        "week": "27-May-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -1012.74,
+        "capital": 57678.79
+      },
+      {
+        "week": "03-Jun-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -11778.2,
+        "capital": 45900.59
+      },
+      {
+        "week": "10-Jun-2024",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 13751.66,
+        "capital": 59652.25
+      },
+      {
+        "week": "17-Jun-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 2,
+        "losses": 1,
+        "win_rate": "67%",
+        "pnl": 11229.94,
+        "capital": 70882.19
+      },
+      {
+        "week": "24-Jun-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 10697.46,
+        "capital": 81579.65
+      },
+      {
+        "week": "01-Jul-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -3506.37,
+        "capital": 78073.28
+      },
+      {
+        "week": "08-Jul-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "win_rate": "50%",
+        "pnl": 1285.2,
+        "capital": 79358.48
+      },
+      {
+        "week": "15-Jul-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 12328.55,
+        "capital": 91687.03
+      },
+      {
+        "week": "22-Jul-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 9777.4,
+        "capital": 101464.43
+      },
+      {
+        "week": "29-Jul-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -3561.6,
+        "capital": 97902.83
+      },
+      {
+        "week": "05-Aug-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 12147.24,
+        "capital": 110050.07
+      },
+      {
+        "week": "12-Aug-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 2,
+        "losses": 1,
+        "win_rate": "67%",
+        "pnl": 14801.96,
+        "capital": 124852.03
+      },
+      {
+        "week": "19-Aug-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 179.99,
+        "capital": 125032.02
+      },
+      {
+        "week": "26-Aug-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -4108.54,
+        "capital": 120923.48
+      },
+      {
+        "week": "02-Sep-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -69.67,
+        "capital": 120853.81
+      },
+      {
+        "week": "09-Sep-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -5489.62,
+        "capital": 115364.19
+      },
+      {
+        "week": "16-Sep-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -1545.84,
+        "capital": 113818.35
+      },
+      {
+        "week": "23-Sep-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -6495.68,
+        "capital": 107322.67
+      },
+      {
+        "week": "30-Sep-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -15443.47,
+        "capital": 91879.2
+      },
+      {
+        "week": "07-Oct-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -17009.36,
+        "capital": 74869.84
+      },
+      {
+        "week": "14-Oct-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 6392.99,
+        "capital": 81262.83
+      },
+      {
+        "week": "21-Oct-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -4495.6,
+        "capital": 76767.23
+      },
+      {
+        "week": "28-Oct-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -2370.44,
+        "capital": 74396.79
+      },
+      {
+        "week": "04-Nov-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 2238.8,
+        "capital": 76635.59
+      },
+      {
+        "week": "11-Nov-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": 669.22,
+        "capital": 77304.81
+      },
+      {
+        "week": "18-Nov-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -1542.75,
+        "capital": 75762.06
+      },
+      {
+        "week": "25-Nov-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 11540.0,
+        "capital": 87302.06
+      },
+      {
+        "week": "02-Dec-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 2599.05,
+        "capital": 89901.11
+      },
+      {
+        "week": "09-Dec-2024",
+        "days": 5,
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "win_rate": "17%",
+        "pnl": 84.96,
+        "capital": 89986.07
+      },
+      {
+        "week": "16-Dec-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 2480.1,
+        "capital": 92466.17
+      },
+      {
+        "week": "23-Dec-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 5816.99,
+        "capital": 98283.16
+      },
+      {
+        "week": "30-Dec-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": 18825.09,
+        "capital": 117108.25
+      },
+      {
+        "week": "06-Jan-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -9994.6,
+        "capital": 107113.65
+      },
+      {
+        "week": "13-Jan-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -15274.49,
+        "capital": 91839.16
+      },
+      {
+        "week": "20-Jan-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -22410.55,
+        "capital": 69428.61
+      },
+      {
+        "week": "27-Jan-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -11191.48,
+        "capital": 58237.13
+      },
+      {
+        "week": "03-Feb-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -1500.93,
+        "capital": 56736.2
+      },
+      {
+        "week": "10-Feb-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -4887.78,
+        "capital": 51848.42
+      },
+      {
+        "week": "17-Feb-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 1093.81,
+        "capital": 52942.23
+      },
+      {
+        "week": "24-Feb-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": 1955.2,
+        "capital": 54897.43
+      },
+      {
+        "week": "03-Mar-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -10592.94,
+        "capital": 44304.49
+      },
+      {
+        "week": "10-Mar-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": "40%",
+        "pnl": 23347.69,
+        "capital": 67652.18
+      },
+      {
+        "week": "17-Mar-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -5038.75,
+        "capital": 62613.43
+      },
+      {
+        "week": "24-Mar-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 2431.2,
+        "capital": 65044.63
+      },
+      {
+        "week": "31-Mar-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -11612.84,
+        "capital": 53431.79
+      },
+      {
+        "week": "14-Apr-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -9441.93,
+        "capital": 43989.86
+      },
+      {
+        "week": "21-Apr-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -16656.21,
+        "capital": 27333.65
+      },
+      {
+        "week": "28-Apr-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -6444.2,
+        "capital": 20889.45
+      },
+      {
+        "week": "05-May-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 6907.6,
+        "capital": 27797.05
+      },
+      {
+        "week": "12-May-2025",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 21886.56,
+        "capital": 49683.61
+      },
+      {
+        "week": "19-May-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -8106.75,
+        "capital": 41576.86
+      },
+      {
+        "week": "26-May-2025",
+        "days": 2,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": -7958.54,
+        "capital": 33618.32
+      },
+      {
+        "week": "02-Jun-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 9712.51,
+        "capital": 43330.83
+      },
+      {
+        "week": "09-Jun-2025",
+        "days": 3,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": -1409.0,
+        "capital": 41921.83
+      },
+      {
+        "week": "16-Jun-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -9598.36,
+        "capital": 32323.47
+      },
+      {
+        "week": "23-Jun-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -6108.08,
+        "capital": 26215.39
+      },
+      {
+        "week": "30-Jun-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 2,
+        "losses": 1,
+        "win_rate": "67%",
+        "pnl": 8595.06,
+        "capital": 34810.45
+      },
+      {
+        "week": "07-Jul-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -2311.56,
+        "capital": 32498.89
+      },
+      {
+        "week": "14-Jul-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -2961.93,
+        "capital": 29536.96
+      },
+      {
+        "week": "21-Jul-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 10354.98,
+        "capital": 39891.94
+      },
+      {
+        "week": "28-Jul-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -5714.29,
+        "capital": 34177.65
+      },
+      {
+        "week": "04-Aug-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -949.74,
+        "capital": 33227.91
+      },
+      {
+        "week": "11-Aug-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 17315.57,
+        "capital": 50543.48
+      },
+      {
+        "week": "18-Aug-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -1852.47,
+        "capital": 48691.01
+      },
+      {
+        "week": "25-Aug-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -2933.56,
+        "capital": 45757.45
+      },
+      {
+        "week": "01-Sep-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 7625.69,
+        "capital": 53383.14
+      },
+      {
+        "week": "08-Sep-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -1415.91,
+        "capital": 51967.23
+      },
+      {
+        "week": "15-Sep-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -5852.43,
+        "capital": 46114.8
+      },
+      {
+        "week": "22-Sep-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -14602.91,
+        "capital": 31511.89
+      },
+      {
+        "week": "29-Sep-2025",
+        "days": 3,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 6229.62,
+        "capital": 37741.51
+      },
+      {
+        "week": "06-Oct-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -8681.26,
+        "capital": 29060.25
+      },
+      {
+        "week": "13-Oct-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": -778.63,
+        "capital": 28281.62
+      },
+      {
+        "week": "20-Oct-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 1974.37,
+        "capital": 30255.99
+      },
+      {
+        "week": "27-Oct-2025",
+        "days": 5,
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "win_rate": "17%",
+        "pnl": 3135.48,
+        "capital": 33391.47
+      },
+      {
+        "week": "03-Nov-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -2271.2,
+        "capital": 31120.27
+      },
+      {
+        "week": "10-Nov-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": -895.0,
+        "capital": 30225.27
+      },
+      {
+        "week": "17-Nov-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": "40%",
+        "pnl": 6127.6,
+        "capital": 36352.87
+      },
+      {
+        "week": "24-Nov-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 780.6,
+        "capital": 37133.47
+      },
+      {
+        "week": "01-Dec-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 409.6,
+        "capital": 37543.07
+      },
+      {
+        "week": "08-Dec-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -8385.6,
+        "capital": 29157.47
+      },
+      {
+        "week": "15-Dec-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -8190.8,
+        "capital": 20966.67
+      },
+      {
+        "week": "22-Dec-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 4776.8,
+        "capital": 25743.47
+      },
+      {
+        "week": "29-Dec-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": -4456.0,
+        "capital": 21287.47
+      },
+      {
+        "week": "05-Jan-2026",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -6816.2,
+        "capital": 14471.27
+      },
+      {
+        "week": "12-Jan-2026",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 14693.4,
+        "capital": 29164.67
+      },
+      {
+        "week": "19-Jan-2026",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -9152.8,
+        "capital": 20011.87
+      },
+      {
+        "week": "26-Jan-2026",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 7529.6,
+        "capital": 27541.47
+      },
+      {
+        "week": "02-Feb-2026",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 941.2,
+        "capital": 28482.67
+      },
+      {
+        "week": "09-Feb-2026",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 2750.6,
+        "capital": 31233.27
+      },
+      {
+        "week": "16-Feb-2026",
+        "days": 5,
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": "40%",
+        "pnl": 23850.8,
+        "capital": 55084.07
+      },
+      {
+        "week": "23-Feb-2026",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -4673.2,
+        "capital": 50410.87
+      }
+    ],
+    "metrics": {
+      "total_trades": 344,
+      "win_rate": 11.63,
+      "loss_rate": 88.37,
+      "max_drawdown_pct": 88.47,
+      "avg_win_duration_candles": 23.7,
+      "avg_loss_duration_candles": 25.3,
+      "profit_factor": 1.11,
+      "net_pnl": 30410.87,
+      "net_pnl_pct": 152.05,
+      "avg_win_pnl": 7689.88,
+      "avg_loss_pnl": -911.79,
+      "max_consecutive_wins": 3,
+      "max_consecutive_losses": 38,
+      "sharpe_estimate": 0.28,
+      "long_trades": 169,
+      "short_trades": 175,
+      "long_win_rate": 10.06,
+      "short_win_rate": 13.14
+    },
+    "final_capital": 50410.87
+  },
+  "heikin_ashi": {
+    "weekly_pnl": [
+      {
+        "week": "04-Mar-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -6614.9,
+        "capital": 13385.1
+      },
+      {
+        "week": "11-Mar-2024",
+        "days": 5,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": 22228.7,
+        "capital": 35613.8
+      },
+      {
+        "week": "18-Mar-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -7581.45,
+        "capital": 28032.35
+      },
+      {
+        "week": "25-Mar-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -1414.95,
+        "capital": 26617.4
+      },
+      {
+        "week": "01-Apr-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 2,
+        "losses": 2,
+        "win_rate": "50%",
+        "pnl": 13870.85,
+        "capital": 40488.25
+      },
+      {
+        "week": "08-Apr-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -6244.39,
+        "capital": 34243.86
+      },
+      {
+        "week": "15-Apr-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 13391.22,
+        "capital": 47635.08
+      },
+      {
+        "week": "22-Apr-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 5184.7,
+        "capital": 52819.78
+      },
+      {
+        "week": "29-Apr-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "win_rate": "50%",
+        "pnl": 5509.95,
+        "capital": 58329.73
+      },
+      {
+        "week": "06-May-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -4288.46,
+        "capital": 54041.27
+      },
+      {
+        "week": "13-May-2024",
+        "days": 6,
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "win_rate": "17%",
+        "pnl": 5603.78,
+        "capital": 59645.05
+      },
+      {
+        "week": "20-May-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 1432.29,
+        "capital": 61077.34
+      },
+      {
+        "week": "27-May-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -670.72,
+        "capital": 60406.62
+      },
+      {
+        "week": "03-Jun-2024",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -3922.73,
+        "capital": 56483.89
+      },
+      {
+        "week": "10-Jun-2024",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 1182.13,
+        "capital": 57666.02
+      },
+      {
+        "week": "17-Jun-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 3,
+        "losses": 0,
+        "win_rate": "100%",
+        "pnl": 20625.78,
+        "capital": 78291.8
+      },
+      {
+        "week": "24-Jun-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 13988.74,
+        "capital": 92280.54
+      },
+      {
+        "week": "01-Jul-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -2187.21,
+        "capital": 90093.33
+      },
+      {
+        "week": "08-Jul-2024",
+        "days": 2,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 3765.62,
+        "capital": 93858.95
+      },
+      {
+        "week": "15-Jul-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 19219.97,
+        "capital": 113078.92
+      },
+      {
+        "week": "22-Jul-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -566.18,
+        "capital": 112512.74
+      },
+      {
+        "week": "29-Jul-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -412.34,
+        "capital": 112100.4
+      },
+      {
+        "week": "05-Aug-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 15974.23,
+        "capital": 128074.63
+      },
+      {
+        "week": "12-Aug-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "win_rate": "50%",
+        "pnl": 7536.87,
+        "capital": 135611.5
+      },
+      {
+        "week": "19-Aug-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -1880.21,
+        "capital": 133731.29
+      },
+      {
+        "week": "26-Aug-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -4591.31,
+        "capital": 129139.98
+      },
+      {
+        "week": "02-Sep-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -1224.15,
+        "capital": 127915.83
+      },
+      {
+        "week": "09-Sep-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -4959.17,
+        "capital": 122956.66
+      },
+      {
+        "week": "16-Sep-2024",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 1107.38,
+        "capital": 124064.04
+      },
+      {
+        "week": "23-Sep-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -7703.34,
+        "capital": 116360.7
+      },
+      {
+        "week": "30-Sep-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -13400.58,
+        "capital": 102960.12
+      },
+      {
+        "week": "07-Oct-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -10416.63,
+        "capital": 92543.49
+      },
+      {
+        "week": "14-Oct-2024",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 5920.65,
+        "capital": 98464.14
+      },
+      {
+        "week": "21-Oct-2024",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -548.93,
+        "capital": 97915.21
+      },
+      {
+        "week": "28-Oct-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -4437.56,
+        "capital": 93477.65
+      },
+      {
+        "week": "04-Nov-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -1215.3,
+        "capital": 92262.35
+      },
+      {
+        "week": "11-Nov-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 2446.96,
+        "capital": 94709.31
+      },
+      {
+        "week": "18-Nov-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -10852.88,
+        "capital": 83856.43
+      },
+      {
+        "week": "25-Nov-2024",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 8235.71,
+        "capital": 92092.14
+      },
+      {
+        "week": "02-Dec-2024",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 3335.41,
+        "capital": 95427.55
+      },
+      {
+        "week": "09-Dec-2024",
+        "days": 5,
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "win_rate": "17%",
+        "pnl": -8.48,
+        "capital": 95419.07
+      },
+      {
+        "week": "16-Dec-2024",
+        "days": 3,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 596.78,
+        "capital": 96015.85
+      },
+      {
+        "week": "23-Dec-2024",
+        "days": 2,
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "win_rate": "50%",
+        "pnl": 7783.32,
+        "capital": 103799.17
+      },
+      {
+        "week": "30-Dec-2024",
+        "days": 5,
+        "trades": 6,
+        "wins": 1,
+        "losses": 5,
+        "win_rate": "17%",
+        "pnl": 19074.26,
+        "capital": 122873.43
+      },
+      {
+        "week": "06-Jan-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -5282.04,
+        "capital": 117591.39
+      },
+      {
+        "week": "13-Jan-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -2547.42,
+        "capital": 115043.97
+      },
+      {
+        "week": "20-Jan-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": -3744.64,
+        "capital": 111299.33
+      },
+      {
+        "week": "27-Jan-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -14379.78,
+        "capital": 96919.55
+      },
+      {
+        "week": "03-Feb-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -3656.43,
+        "capital": 93263.12
+      },
+      {
+        "week": "10-Feb-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -8020.82,
+        "capital": 85242.3
+      },
+      {
+        "week": "17-Feb-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 4275.35,
+        "capital": 89517.65
+      },
+      {
+        "week": "24-Feb-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": 2334.78,
+        "capital": 91852.43
+      },
+      {
+        "week": "03-Mar-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -6405.57,
+        "capital": 85446.86
+      },
+      {
+        "week": "10-Mar-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 2,
+        "losses": 2,
+        "win_rate": "50%",
+        "pnl": 30105.78,
+        "capital": 115552.64
+      },
+      {
+        "week": "17-Mar-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -2926.51,
+        "capital": 112626.13
+      },
+      {
+        "week": "24-Mar-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 5346.46,
+        "capital": 117972.59
+      },
+      {
+        "week": "31-Mar-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -12032.45,
+        "capital": 105940.14
+      },
+      {
+        "week": "14-Apr-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -4761.07,
+        "capital": 101179.07
+      },
+      {
+        "week": "21-Apr-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -12631.71,
+        "capital": 88547.36
+      },
+      {
+        "week": "28-Apr-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -6851.76,
+        "capital": 81695.6
+      },
+      {
+        "week": "05-May-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 9185.98,
+        "capital": 90881.58
+      },
+      {
+        "week": "12-May-2025",
+        "days": 3,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 24548.03,
+        "capital": 115429.61
+      },
+      {
+        "week": "19-May-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -8544.43,
+        "capital": 106885.18
+      },
+      {
+        "week": "26-May-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 1,
+        "losses": 1,
+        "win_rate": "50%",
+        "pnl": 3600.41,
+        "capital": 110485.59
+      },
+      {
+        "week": "02-Jun-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 11068.25,
+        "capital": 121553.84
+      },
+      {
+        "week": "09-Jun-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 1696.56,
+        "capital": 123250.4
+      },
+      {
+        "week": "16-Jun-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -10682.74,
+        "capital": 112567.66
+      },
+      {
+        "week": "23-Jun-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -2716.49,
+        "capital": 109851.17
+      },
+      {
+        "week": "30-Jun-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 4198.87,
+        "capital": 114050.04
+      },
+      {
+        "week": "07-Jul-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -3743.84,
+        "capital": 110306.2
+      },
+      {
+        "week": "14-Jul-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -2743.85,
+        "capital": 107562.35
+      },
+      {
+        "week": "21-Jul-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -1968.62,
+        "capital": 105593.73
+      },
+      {
+        "week": "28-Jul-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -5307.92,
+        "capital": 100285.81
+      },
+      {
+        "week": "04-Aug-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -1826.0,
+        "capital": 98459.81
+      },
+      {
+        "week": "11-Aug-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 10049.9,
+        "capital": 108509.71
+      },
+      {
+        "week": "18-Aug-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": -2153.97,
+        "capital": 106355.74
+      },
+      {
+        "week": "25-Aug-2025",
+        "days": 1,
+        "trades": 1,
+        "wins": 0,
+        "losses": 1,
+        "win_rate": "0%",
+        "pnl": -2729.21,
+        "capital": 103626.53
+      },
+      {
+        "week": "01-Sep-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": 9966.74,
+        "capital": 113593.27
+      },
+      {
+        "week": "08-Sep-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 1654.47,
+        "capital": 115247.74
+      },
+      {
+        "week": "15-Sep-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": 1021.8,
+        "capital": 116269.54
+      },
+      {
+        "week": "22-Sep-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -15250.61,
+        "capital": 101018.93
+      },
+      {
+        "week": "29-Sep-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 7521.95,
+        "capital": 108540.88
+      },
+      {
+        "week": "06-Oct-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -6101.83,
+        "capital": 102439.05
+      },
+      {
+        "week": "13-Oct-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": 3754.54,
+        "capital": 106193.59
+      },
+      {
+        "week": "20-Oct-2025",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 1488.15,
+        "capital": 107681.74
+      },
+      {
+        "week": "27-Oct-2025",
+        "days": 5,
+        "trades": 6,
+        "wins": 0,
+        "losses": 6,
+        "win_rate": "0%",
+        "pnl": -8624.4,
+        "capital": 99057.34
+      },
+      {
+        "week": "03-Nov-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -931.3,
+        "capital": 98126.04
+      },
+      {
+        "week": "10-Nov-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -12741.3,
+        "capital": 85384.74
+      },
+      {
+        "week": "17-Nov-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": 519.7,
+        "capital": 85904.44
+      },
+      {
+        "week": "24-Nov-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 5308.95,
+        "capital": 91213.39
+      },
+      {
+        "week": "01-Dec-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 1,
+        "losses": 3,
+        "win_rate": "25%",
+        "pnl": -22.05,
+        "capital": 91191.34
+      },
+      {
+        "week": "08-Dec-2025",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -9143.05,
+        "capital": 82048.29
+      },
+      {
+        "week": "15-Dec-2025",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -6509.3,
+        "capital": 75538.99
+      },
+      {
+        "week": "22-Dec-2025",
+        "days": 3,
+        "trades": 3,
+        "wins": 1,
+        "losses": 2,
+        "win_rate": "33%",
+        "pnl": 5978.0,
+        "capital": 81516.99
+      },
+      {
+        "week": "29-Dec-2025",
+        "days": 5,
+        "trades": 5,
+        "wins": 1,
+        "losses": 4,
+        "win_rate": "20%",
+        "pnl": -1673.85,
+        "capital": 79843.14
+      },
+      {
+        "week": "05-Jan-2026",
+        "days": 5,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -12567.35,
+        "capital": 67275.79
+      },
+      {
+        "week": "12-Jan-2026",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": 5687.65,
+        "capital": 72963.44
+      },
+      {
+        "week": "19-Jan-2026",
+        "days": 3,
+        "trades": 3,
+        "wins": 0,
+        "losses": 3,
+        "win_rate": "0%",
+        "pnl": -5159.5,
+        "capital": 67803.94
+      },
+      {
+        "week": "26-Jan-2026",
+        "days": 4,
+        "trades": 5,
+        "wins": 0,
+        "losses": 5,
+        "win_rate": "0%",
+        "pnl": -8454.75,
+        "capital": 59349.19
+      },
+      {
+        "week": "02-Feb-2026",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 358.5,
+        "capital": 59707.69
+      },
+      {
+        "week": "09-Feb-2026",
+        "days": 2,
+        "trades": 2,
+        "wins": 0,
+        "losses": 2,
+        "win_rate": "0%",
+        "pnl": 1486.65,
+        "capital": 61194.34
+      },
+      {
+        "week": "16-Feb-2026",
+        "days": 5,
+        "trades": 5,
+        "wins": 2,
+        "losses": 3,
+        "win_rate": "40%",
+        "pnl": 26400.3,
+        "capital": 87594.64
+      },
+      {
+        "week": "23-Feb-2026",
+        "days": 4,
+        "trades": 4,
+        "wins": 0,
+        "losses": 4,
+        "win_rate": "0%",
+        "pnl": -11565.85,
+        "capital": 76028.79
+      }
+    ],
+    "metrics": {
+      "total_trades": 351,
+      "win_rate": 10.54,
+      "loss_rate": 89.46,
+      "max_drawdown_pct": 57.13,
+      "avg_win_duration_candles": 20.7,
+      "avg_loss_duration_candles": 20.4,
+      "profit_factor": 1.23,
+      "net_pnl": 56028.79,
+      "net_pnl_pct": 280.14,
+      "avg_win_pnl": 8050.04,
+      "avg_loss_pnl": -770.14,
+      "max_consecutive_wins": 3,
+      "max_consecutive_losses": 42,
+      "sharpe_estimate": 0.54,
+      "long_trades": 172,
+      "short_trades": 179,
+      "long_win_rate": 8.72,
+      "short_win_rate": 12.29
+    },
+    "final_capital": 76028.79
+  }
+}
