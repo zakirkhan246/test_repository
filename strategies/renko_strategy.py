@@ -136,9 +136,9 @@ class RenkoBacktestEngine:
     Brick-by-brick backtest engine for the Renko Pullback strategy.
 
     Entry:   At close of signal brick
-    SL:      Fixed price-based stop = 1 brick size (40 pts) from entry.
-             Checked on every brick — if the brick's adverse price
-             breaches entry ± brick_size, exit at the SL price.
+    SL:      1 opposite brick, but only if the trade is in a loss
+             (current close is worse than entry). If in profit,
+             the opposite brick is tolerated as a pullback.
     Target:  Trailing — exit when 2 consecutive opposite bricks appear.
     Exit:    Also force-close at EOD (intraday only).
     Re-entry: Must wait for new 4-brick trend after exit.
@@ -195,42 +195,31 @@ class RenkoBacktestEngine:
             if open_trade is not None:
                 trade_dir = open_trade["direction"]
                 entry_price = open_trade["entry_price"]
-                sl_price = open_trade["sl_price"]
 
-                # Step A: Check fixed price-based SL on this brick.
-                # For a long, the worst price on an opposite (red) brick
-                # is the close; on a green brick it's the open.
-                # Since Renko bricks only have open/close (no wicks),
-                # the adverse price is min(open, close) for longs,
-                # max(open, close) for shorts.
-                if trade_dir == 1:
-                    adverse = min(cur_open, cur_close)
-                    if adverse <= sl_price:
-                        pnl_pts = sl_price - entry_price  # = -brick_size
-                        trades.append(self._close_trade(
-                            open_trade, sl_price, cur_ts, pnl_pts, "STOP_LOSS"))
-                        open_trade = None
-                        opposite_count = 0
-                        waiting_for_new_trend = True
-                        continue
-                else:  # short
-                    adverse = max(cur_open, cur_close)
-                    if adverse >= sl_price:
-                        pnl_pts = entry_price - sl_price  # = -brick_size
-                        trades.append(self._close_trade(
-                            open_trade, sl_price, cur_ts, pnl_pts, "STOP_LOSS"))
-                        open_trade = None
-                        opposite_count = 0
-                        waiting_for_new_trend = True
-                        continue
+                # Current P&L at this brick's close
+                cur_pnl = (cur_close - entry_price) * trade_dir
+                in_loss = cur_pnl < 0
 
-                # Step B: Track consecutive opposite bricks for trailing exit
+                # Track consecutive opposite bricks
                 if cur_dir == trade_dir:
                     opposite_count = 0
                 else:
                     opposite_count += 1
 
-                # Trailing exit: 2 consecutive opposite bricks
+                # SL rule: 1 opposite brick, but ONLY if trade is in a loss.
+                # This lets the brick fully form before deciding.
+                # If in profit, we tolerate the pullback and let
+                # the 2-brick trailing exit handle it.
+                if opposite_count >= 1 and in_loss:
+                    pnl_pts = (cur_close - entry_price) * trade_dir
+                    trades.append(self._close_trade(
+                        open_trade, cur_close, cur_ts, pnl_pts, "STOP_LOSS"))
+                    open_trade = None
+                    opposite_count = 0
+                    waiting_for_new_trend = True
+                    continue
+
+                # Trailing exit: 2 consecutive opposite bricks (any P&L)
                 if opposite_count >= 2:
                     pnl_pts = (cur_close - entry_price) * trade_dir
                     trades.append(self._close_trade(
@@ -244,13 +233,11 @@ class RenkoBacktestEngine:
             if open_trade is None and signals[i] != 0:
                 if not waiting_for_new_trend:
                     trade_dir = int(signals[i])
-                    sl = cur_close - self.brick_size if trade_dir == 1 else cur_close + self.brick_size
                     open_trade = {
                         "entry_price": cur_close,
                         "entry_time": cur_ts,
                         "direction": trade_dir,
                         "date": cur_date,
-                        "sl_price": sl,
                     }
                     opposite_count = 0
 
@@ -258,13 +245,11 @@ class RenkoBacktestEngine:
             if waiting_for_new_trend and signals[i] != 0:
                 if open_trade is None:
                     trade_dir = int(signals[i])
-                    sl = cur_close - self.brick_size if trade_dir == 1 else cur_close + self.brick_size
                     open_trade = {
                         "entry_price": cur_close,
                         "entry_time": cur_ts,
                         "direction": trade_dir,
                         "date": cur_date,
-                        "sl_price": sl,
                     }
                     opposite_count = 0
                     waiting_for_new_trend = False
