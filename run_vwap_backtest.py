@@ -145,6 +145,7 @@ def main():
     print(f"  Capital: ₹{INITIAL_CAPITAL:,.0f} | {NUM_LOTS} lot × {LOT_SIZE} = {LOT_SIZE * NUM_LOTS} qty/trade")
     print("  Timeframe: 1-minute candles")
     print("  Data: Only days with real volume (Nov 2025 - Mar 2026)")
+    print("  Window: 10:15 - 15:00 (skip first hour + post 3pm)")
     print("  Entry: Bounce off VWAP | SL: Bounce candle extreme | Target: Last swing")
     print(f"  Run Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 74)
@@ -162,8 +163,11 @@ def main():
     df["vwap"] = compute_vwap(df)
     print(f"  VWAP computed for all candles")
 
-    # Detect signals
-    df_signals = detect_vwap_bounce_signals(df, lookback=60, min_rr=1.0)
+    # Detect signals — skip first hour (candles 0-59) and post 3pm (candle 345+)
+    # 9:15 + 60 min = 10:15 (candle 60), 9:15 + 345 min = 15:00 (candle 345)
+    df_signals = detect_vwap_bounce_signals(
+        df, lookback=60, min_rr=1.0, start_candle=60, end_candle=344,
+    )
 
     total_signals = (df_signals["signal"] != 0).sum()
     long_signals = (df_signals["signal"] == 1).sum()

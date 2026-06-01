@@ -58,6 +58,8 @@ def detect_vwap_bounce_signals(
     lookback: int = 60,
     min_rr: float = 1.0,
     proximity_pct: float = 0.05,
+    start_candle: int = 0,
+    end_candle: int = 999,
 ) -> pd.DataFrame:
     """
     Detect VWAP bounce entries on 1-min candles.
@@ -71,6 +73,8 @@ def detect_vwap_bounce_signals(
     lookback : bars to search for swing high/low target
     min_rr : minimum reward:risk ratio to take a trade
     proximity_pct : how close price needs to be to VWAP (% of price) for touch
+    start_candle : first candle index allowed for signals (skip early session)
+    end_candle : last candle index allowed for signals (skip late session)
     """
     df = df.copy()
     df["signal"] = 0
@@ -91,7 +95,13 @@ def detect_vwap_bounce_signals(
         opens = day_df["open"].values
         indices = day_df.index
 
+        candle_idxs = day_df["candle_idx"].values
+
         for i in range(20, len(day_df) - 5):
+            ci = candle_idxs[i]
+            if ci < start_candle or ci > end_candle:
+                continue
+
             v = vwap[i]
             if np.isnan(v) or v <= 0:
                 continue
