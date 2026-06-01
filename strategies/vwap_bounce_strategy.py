@@ -60,6 +60,7 @@ def detect_vwap_bounce_signals(
     proximity_pct: float = 0.05,
     start_candle: int = 0,
     end_candle: int = 999,
+    max_vol_ratio: float = 0.0,
 ) -> pd.DataFrame:
     """
     Detect VWAP bounce entries on 1-min candles.
@@ -75,6 +76,7 @@ def detect_vwap_bounce_signals(
     proximity_pct : how close price needs to be to VWAP (% of price) for touch
     start_candle : first candle index allowed for signals (skip early session)
     end_candle : last candle index allowed for signals (skip late session)
+    max_vol_ratio : skip candles where volume > max_vol_ratio × day avg (0 = disabled)
     """
     df = df.copy()
     df["signal"] = 0
@@ -93,6 +95,7 @@ def detect_vwap_bounce_signals(
         lows = day_df["low"].values
         closes = day_df["close"].values
         opens = day_df["open"].values
+        volumes = day_df["volume"].values
         indices = day_df.index
 
         candle_idxs = day_df["candle_idx"].values
@@ -105,6 +108,11 @@ def detect_vwap_bounce_signals(
             v = vwap[i]
             if np.isnan(v) or v <= 0:
                 continue
+
+            if max_vol_ratio > 0:
+                avg_vol = np.mean(volumes[:i+1])
+                if avg_vol > 0 and volumes[i] / avg_vol > max_vol_ratio:
+                    continue
 
             h = highs[i]
             l = lows[i]
