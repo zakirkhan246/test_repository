@@ -41,6 +41,8 @@ class ChannelEngine:
         force_close_candle: int = 72,  # Force close at 15:15
         use_trend_filter: bool = True,
         trend_threshold: int = 2,
+        adx_threshold: float = 0.0,
+        chop_threshold: float = 100.0,
     ):
         self.initial_capital = initial_capital
         self.max_trades_per_day = max_trades_per_day
@@ -50,6 +52,20 @@ class ChannelEngine:
         self.force_close_candle = force_close_candle
         self.use_trend_filter = use_trend_filter
         self.trend_threshold = trend_threshold
+        self.adx_threshold = adx_threshold
+        self.chop_threshold = chop_threshold
+
+    def _chop_allows(self, row) -> bool:
+        """Check if market is trending enough (ADX/CI) for entry."""
+        if self.adx_threshold > 0:
+            adx = row.get("adx", 100) if hasattr(row, "get") else 100
+            if pd.isna(adx) or adx <= self.adx_threshold:
+                return False
+        if self.chop_threshold < 100:
+            chop = row.get("chop", 0) if hasattr(row, "get") else 0
+            if pd.isna(chop) or chop >= self.chop_threshold:
+                return False
+        return True
 
     def _trend_allows(self, row, direction: int) -> bool:
         """Check if trend score permits entry in the given direction."""
@@ -157,7 +173,7 @@ class ChannelEngine:
                     if just_exited != 0 and i == exit_idx + 1:
                         if just_exited == 1 and close < ch_lower:
                             # After long exit, next candle confirms below → SHORT
-                            if self._trend_allows(row, -1):
+                            if self._trend_allows(row, -1) and self._chop_allows(row):
                                 open_trade = self._open_trade(
                                     row, timestamp, -1, date
                                 )
@@ -169,7 +185,7 @@ class ChannelEngine:
 
                         elif just_exited == -1 and close > ch_upper:
                             # After short exit, next candle confirms above → LONG
-                            if self._trend_allows(row, 1):
+                            if self._trend_allows(row, 1) and self._chop_allows(row):
                                 open_trade = self._open_trade(
                                     row, timestamp, 1, date
                                 )
@@ -183,7 +199,7 @@ class ChannelEngine:
                     elif just_exited == 0 or i > exit_idx + 1:
                         if last_side == "below" and close > ch_upper:
                             # Price crossed from below to above → LONG
-                            if self._trend_allows(row, 1):
+                            if self._trend_allows(row, 1) and self._chop_allows(row):
                                 open_trade = self._open_trade(
                                     row, timestamp, 1, date
                                 )
@@ -195,7 +211,7 @@ class ChannelEngine:
 
                         elif last_side == "above" and close < ch_lower:
                             # Price crossed from above to below → SHORT
-                            if self._trend_allows(row, -1):
+                            if self._trend_allows(row, -1) and self._chop_allows(row):
                                 open_trade = self._open_trade(
                                     row, timestamp, -1, date
                                 )

@@ -2,15 +2,16 @@
 """
 Backtest runner for 20 EMA Channel strategy on real SENSEX data.
 
-Strategy: Enter when price closes above/below the 20 EMA channel
-(formed by EMA of opens and EMA of closes). Exit on channel crossback.
-Re-enter opposite direction if next candle confirms.
+Runs on the same 82 volume days (Nov 2025 - Mar 2026) as the VWAP Bounce
+strategy for a fair head-to-head comparison.
 
-Trend Filter: 3-factor composite score (VWAP + Opening Range + EMA Slope).
-Only trade in the direction of the day's trend (score >= 2 or <= -2).
+Tests 4 variants:
+  1. Trend filter only (baseline on volume days)
+  2. Trend filter + ADX > 20
+  3. Trend filter + CI < 50
+  4. Trend filter + ADX > 20 + CI < 50
 
-Capital: 20,000 INR | Lot size: 10 | Lots: 2 (qty = 20 per trade)
-Timeframe: 5-minute candles
+Capital: ₹20,000 | Lot size: 10 × 2 = 20 qty | 5-min candles
 """
 
 import sys
@@ -26,6 +27,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from data.loader import load_sensex_data
 from strategies.ema_channel_strategy import EMAChannelStrategy
+from strategies.indicators import compute_adx, compute_choppiness_index
 from backtester.channel_engine import ChannelEngine
 
 
@@ -34,28 +36,79 @@ LOT_SIZE = 10
 NUM_LOTS = 2
 
 
+def load_volume_days_only(heikin_ashi=False):
+    """Load 5-min data, keep only days with real volume (same as VWAP strategy)."""
+    csv_path = os.path.join(os.path.dirname(__file__), "data", "sensex_1min_2yr.csv")
+    df_1min = pd.read_csv(csv_path, parse_dates=["datetime"])
+    df_1min = df_1min.sort_values("datetime").reset_index(drop=True)
+    df_1min = df_1min.dropna(subset=["open", "high", "low", "close"])
+    df_1min.set_index("datetime", inplace=True)
+    df_1min["date"] = df_1min.index.date
+
+    daily_vol = df_1min.groupby("date")["volume"].sum()
+    vol_days = daily_vol[daily_vol > 0].index
+
+    df_1min = df_1min[df_1min["date"].isin(vol_days)].copy()
+
+    resampled_frames = []
+    for date, day_df in df_1min.groupby("date"):
+        day_resampled = day_df.resample("5min").agg({
+            "open": "first",
+            "high": "max",
+            "low": "min",
+            "close": "last",
+            "volume": "sum",
+        }).dropna(subset=["open"])
+        resampled_frames.append(day_resampled)
+
+    df = pd.concat(resampled_frames)
+    df["date"] = df.index.date
+    df["symbol"] = "SENSEX"
+
+    if heikin_ashi:
+        from data.loader import convert_to_heikin_ashi
+        df = convert_to_heikin_ashi(df)
+
+    return df
+
+
+def add_chop_indicators(df):
+    """Compute ADX and CI per day on 5-min candles."""
+    df["adx"] = np.nan
+    df["chop"] = np.nan
+    for date in df["date"].unique():
+        mask = df["date"] == date
+        day = df.loc[mask]
+        if len(day) < 15:
+            continue
+        adx_df = compute_adx(day["high"], day["low"], day["close"], period=14)
+        df.loc[mask, "adx"] = adx_df["adx"].values
+        df.loc[mask, "chop"] = compute_choppiness_index(
+            day["high"], day["low"], day["close"], period=14
+        ).values
+    return df
+
+
 def weekly_pnl_table(trades, initial_capital):
-    """Build a week-by-week P&L breakdown from trade list."""
     if not trades:
         return []
 
-    df = pd.DataFrame(trades)
-    df["entry_time"] = pd.to_datetime(df["entry_time"])
-    df["week_start"] = df["entry_time"].dt.to_period("W").apply(lambda p: p.start_time)
+    tdf = pd.DataFrame(trades)
+    tdf["entry_time"] = pd.to_datetime(tdf["entry_time"])
+    tdf["week_start"] = tdf["entry_time"].dt.to_period("W").apply(lambda p: p.start_time)
 
     rows = []
     running_capital = initial_capital
 
-    for week, group in df.groupby("week_start"):
+    for week, group in tdf.groupby("week_start"):
         wins = len(group[group["result"] == "WIN"])
         losses = len(group[group["result"].isin(["LOSS", "TIME_EXIT"])])
         week_pnl = group["pnl"].sum()
         running_capital += week_pnl
-        n_days = group["date"].nunique()
 
         rows.append({
             "week": week.strftime("%d-%b-%Y"),
-            "days": n_days,
+            "days": group["date"].nunique(),
             "trades": len(group),
             "wins": wins,
             "losses": losses,
@@ -68,10 +121,8 @@ def weekly_pnl_table(trades, initial_capital):
 
 
 def print_results(label, result, initial_capital):
-    """Print full results for a backtest run."""
     trades = result["trades"]
     m = result["metrics"]
-
     weeks = weekly_pnl_table(trades, initial_capital)
 
     print(f"\n{'─' * 74}")
@@ -80,242 +131,141 @@ def print_results(label, result, initial_capital):
 
     table = []
     for w in weeks:
-        pnl_str = f"₹{w['pnl']:+,.2f}"
-        cap_str = f"₹{w['capital']:,.2f}"
         table.append([
             w["week"], w["days"], w["trades"], w["wins"], w["losses"],
-            w["win_rate"], pnl_str, cap_str,
+            w["win_rate"], f"₹{w['pnl']:+,.2f}", f"₹{w['capital']:,.2f}",
         ])
-
     headers = ["Week Of", "Days", "Trades", "W", "L", "Win%", "P&L", "Capital"]
     print(tabulate(table, headers=headers, tablefmt="simple", stralign="right"))
 
     if weeks:
         best_w = max(weeks, key=lambda w: w["pnl"])
         worst_w = min(weeks, key=lambda w: w["pnl"])
-        green_weeks = sum(1 for w in weeks if w["pnl"] > 0)
-        red_weeks = sum(1 for w in weeks if w["pnl"] <= 0)
-        print(f"\n  Green weeks: {green_weeks} | Red weeks: {red_weeks}")
+        green = sum(1 for w in weeks if w["pnl"] > 0)
+        red = sum(1 for w in weeks if w["pnl"] <= 0)
+        print(f"\n  Green weeks: {green} | Red weeks: {red}")
         print(f"  Best week:  {best_w['week']}  ₹{best_w['pnl']:+,.2f}")
         print(f"  Worst week: {worst_w['week']}  ₹{worst_w['pnl']:+,.2f}")
 
-    if trades:
-        trade_df = pd.DataFrame(trades)
-        channel_exits = len(trade_df[trade_df["result"].isin(["WIN", "LOSS", "BREAKEVEN"])])
-        time_exits = len(trade_df[trade_df["result"] == "TIME_EXIT"])
-        print(f"\n{'─' * 74}")
-        print(f"  EXIT BREAKDOWN — {label}")
-        print(f"{'─' * 74}")
-        print(f"  Channel exits: {channel_exits}  |  Time exits (EOD): {time_exits}")
-
-    print(f"\n{'─' * 74}")
-    print(f"  SUMMARY — {label}")
-    print(f"{'─' * 74}")
-    print(f"  Starting Capital:  ₹{initial_capital:>10,.2f}")
-    print(f"  Final Capital:     ₹{result['final_capital']:>10,.2f}")
-    print(f"  Net P&L:           ₹{m['net_pnl']:>+10,.2f}  ({m['net_pnl_pct']:+.2f}%)")
-    print(f"  Total Trades:      {m['total_trades']}")
-    print(f"  Win Rate:          {m['win_rate']:.1f}%")
-    print(f"  Profit Factor:     {m['profit_factor']:.2f}")
-    print(f"  Max Drawdown:      {m['max_drawdown_pct']:.2f}%")
-    print(f"  Sharpe Estimate:   {m['sharpe_estimate']:.2f}")
-    print(f"\n  Avg Win:           ₹{m['avg_win_pnl']:+,.2f}  ({m['avg_win_duration_candles']:.1f} candles / {m['avg_win_duration_candles'] * 5:.0f} min)")
-    print(f"  Avg Loss:          ₹{m['avg_loss_pnl']:+,.2f}  ({m['avg_loss_duration_candles']:.1f} candles / {m['avg_loss_duration_candles'] * 5:.0f} min)")
-    print(f"\n  Long Trades:       {m['long_trades']}  (Win: {m['long_win_rate']:.1f}%)")
-    print(f"  Short Trades:      {m['short_trades']}  (Win: {m['short_win_rate']:.1f}%)")
-    print(f"  Max Consec Wins:   {m['max_consecutive_wins']}")
-    print(f"  Max Consec Losses: {m['max_consecutive_losses']}")
-
+    print(f"\n  Net P&L: ₹{m['net_pnl']:+,.2f} ({m['net_pnl_pct']:+.2f}%) | Trades: {m['total_trades']} | WR: {m['win_rate']:.1f}%")
+    print(f"  PF: {m['profit_factor']:.2f} | MaxDD: {m['max_drawdown_pct']:.2f}% | Sharpe: {m['sharpe_estimate']:.2f}")
+    print(f"  Avg Win: ₹{m['avg_win_pnl']:+,.2f} | Avg Loss: ₹{m['avg_loss_pnl']:+,.2f}")
+    rr = abs(m["avg_win_pnl"] / m["avg_loss_pnl"]) if m["avg_loss_pnl"] != 0 else 0
+    print(f"  Avg R:R: {rr:.2f}x")
+    print(f"  Long: {m['long_trades']} ({m['long_win_rate']:.1f}%) | Short: {m['short_trades']} ({m['short_win_rate']:.1f}%)")
+    print(f"  Max Consec Wins: {m['max_consecutive_wins']} | Losses: {m['max_consecutive_losses']}")
     if result.get("trend_blocked", 0) > 0:
-        print(f"\n  Trend-filtered:    {result['trend_blocked']} entries blocked by trend filter")
+        print(f"  Trend/chop blocked: {result['trend_blocked']} entries")
 
     return weeks
 
 
-def run_candle_type(candle_label, data, n_days):
-    """Run the full backtest suite for a given candle type (Regular or Heikin Ashi)."""
+def main():
+    print("=" * 80)
+    print("  SENSEX EMA CHANNEL — Volume Days Only + Chop Filter Comparison")
+    print(f"  Capital: ₹{INITIAL_CAPITAL:,.0f} | {NUM_LOTS} lots × {LOT_SIZE} = {LOT_SIZE * NUM_LOTS} qty")
+    print("  5-min candles | Heikin Ashi | Trend filter ON")
+    print("  Volume days only (same 82 days as VWAP Bounce)")
+    print(f"  Run Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 80)
+
+    # Load volume days only, Heikin Ashi (best variant from prior testing)
+    df = load_volume_days_only(heikin_ashi=True)
+    n_days = df["date"].nunique()
+    print(f"\n  Data: {n_days} trading days, {len(df)} 5-min candles")
+    print(f"  Range: {df['date'].min()} to {df['date'].max()}")
+
+    # Prepare strategy indicators
     strategy = EMAChannelStrategy(ema_period=20)
-    prepared = strategy.prepare(data)
+    prepared = strategy.prepare(df)
 
-    # ── Trend score distribution ──
-    trading_candles = prepared[prepared["candle_idx"] >= 6]
-    score_counts = trading_candles["trend_score"].value_counts().sort_index()
-    print(f"\n{'─' * 74}")
-    print(f"  TREND SCORE DISTRIBUTION — {candle_label} (trading candles only)")
-    print(f"{'─' * 74}")
-    total_candles = len(trading_candles)
-    for score, count in score_counts.items():
-        pct = count / total_candles * 100
-        label = "BEARISH" if score <= -2 else "BULLISH" if score >= 2 else "NEUTRAL"
-        bar = "█" * int(pct / 2)
-        print(f"  Score {score:+d}: {count:>6} ({pct:5.1f}%) {bar}  [{label}]")
+    # Add ADX and CI per day
+    prepared = add_chop_indicators(prepared)
+    print(f"  ADX range: {prepared['adx'].min():.1f} - {prepared['adx'].max():.1f} (mean: {prepared['adx'].mean():.1f})")
+    print(f"  Chop range: {prepared['chop'].min():.1f} - {prepared['chop'].max():.1f} (mean: {prepared['chop'].mean():.1f})")
 
-    bullish_pct = len(trading_candles[trading_candles["trend_score"] >= 2]) / total_candles * 100
-    bearish_pct = len(trading_candles[trading_candles["trend_score"] <= -2]) / total_candles * 100
-    neutral_pct = 100 - bullish_pct - bearish_pct
-    print(f"\n  Tradeable: {bullish_pct + bearish_pct:.1f}% (Bullish {bullish_pct:.1f}% | Bearish {bearish_pct:.1f}%) | Neutral: {neutral_pct:.1f}%")
+    # Run 4 variants
+    variants = [
+        ("Trend Only (baseline)", 0.0, 100.0),
+        ("Trend + ADX>20", 20.0, 100.0),
+        ("Trend + CI<50", 0.0, 50.0),
+        ("Trend + ADX>20 + CI<50", 20.0, 50.0),
+    ]
 
-    # Run with trend filter (threshold=2) and without
-    runs = {}
-    for label, use_filter, threshold in [
-        ("WITH TREND FILTER", True, 2),
-        ("NO FILTER (baseline)", False, 2),
-    ]:
+    results = []
+    for label, adx_thresh, chop_thresh in variants:
         engine = ChannelEngine(
             initial_capital=INITIAL_CAPITAL,
             max_trades_per_day=4,
             lot_size=LOT_SIZE,
             num_lots=NUM_LOTS,
-            use_trend_filter=use_filter,
-            trend_threshold=threshold,
+            use_trend_filter=True,
+            trend_threshold=2,
+            adx_threshold=adx_thresh,
+            chop_threshold=chop_thresh,
         )
         result = engine.run(prepared)
-        run_label = f"{candle_label} — {label}"
-        weeks = print_results(run_label, result, INITIAL_CAPITAL)
-        runs[label] = {"result": result, "weeks": weeks}
+        results.append((label, result))
 
-    return runs
+    # Print comparison table
+    print(f"\n{'═' * 90}")
+    print("  CHOP FILTER COMPARISON — EMA Channel (Heikin Ashi + Trend Filter)")
+    print(f"{'═' * 90}")
 
+    scan_table = []
+    for label, r in results:
+        m = r["metrics"]
+        rr = abs(m["avg_win_pnl"] / m["avg_loss_pnl"]) if m["avg_loss_pnl"] != 0 else 0
+        scan_table.append([
+            label, m["total_trades"], f"{m['win_rate']:.1f}%",
+            f"{m['profit_factor']:.2f}", f"₹{m['net_pnl']:+,.0f}",
+            f"{m['max_drawdown_pct']:.1f}%", f"{m['sharpe_estimate']:.2f}",
+            f"{rr:.1f}x", m["max_consecutive_losses"],
+        ])
+    headers = ["Variant", "Trades", "WR", "PF", "Net P&L", "MaxDD", "Sharpe", "R:R", "MaxLStreak"]
+    print(tabulate(scan_table, headers=headers, tablefmt="simple", stralign="right"))
 
-def print_comparison_table(reg_runs, ha_runs):
-    """Print head-to-head comparison: Regular vs Heikin Ashi candles."""
-    reg_f = reg_runs["WITH TREND FILTER"]["result"]
-    reg_nf = reg_runs["NO FILTER (baseline)"]["result"]
-    ha_f = ha_runs["WITH TREND FILTER"]["result"]
-    ha_nf = ha_runs["NO FILTER (baseline)"]["result"]
+    # Print full weekly results for best variant
+    best_label, best_result = max(results, key=lambda r: r[1]["metrics"]["profit_factor"])
+    print(f"\n  Best by PF: {best_label}")
+    print_results(best_label, best_result, INITIAL_CAPITAL)
 
-    all_results = [
-        ("Reg+Filter", reg_f),
-        ("Reg NoFilter", reg_nf),
-        ("HA+Filter", ha_f),
-        ("HA NoFilter", ha_nf),
-    ]
-    ms = [(label, r["metrics"], r) for label, r in all_results]
+    # Also print baseline for reference
+    base_label, base_result = results[0]
+    if base_label != best_label:
+        print_results(base_label, base_result, INITIAL_CAPITAL)
 
-    print(f"\n{'═' * 98}")
-    print("  REGULAR vs HEIKIN ASHI — HEAD-TO-HEAD COMPARISON")
-    print(f"{'═' * 98}")
-    print(f"  {'Metric':<22} {'Reg+Filter':>16} {'Reg NoFilter':>16} {'HA+Filter':>16} {'HA NoFilter':>16}")
-    print(f"  {'─' * 22} {'─' * 16} {'─' * 16} {'─' * 16} {'─' * 16}")
-
-    def row(name, key, fmt="d"):
-        vals = [m[key] for _, m, _ in ms]
-        if fmt == "d":
-            print(f"  {name:<22} {vals[0]:>16} {vals[1]:>16} {vals[2]:>16} {vals[3]:>16}")
-        elif fmt == "pct":
-            print(f"  {name:<22} {vals[0]:>15.1f}% {vals[1]:>15.1f}% {vals[2]:>15.1f}% {vals[3]:>15.1f}%")
-        elif fmt == "f2":
-            print(f"  {name:<22} {vals[0]:>16.2f} {vals[1]:>16.2f} {vals[2]:>16.2f} {vals[3]:>16.2f}")
-        elif fmt == "inr":
-            print(f"  {name:<22} {'₹{:+,.0f}'.format(vals[0]):>16} {'₹{:+,.0f}'.format(vals[1]):>16} {'₹{:+,.0f}'.format(vals[2]):>16} {'₹{:+,.0f}'.format(vals[3]):>16}")
-
-    row("Total Trades", "total_trades", "d")
-
-    # Wins row (computed)
-    wins = [int(m["total_trades"] * m["win_rate"] / 100) for _, m, _ in ms]
-    print(f"  {'Wins':<22} {wins[0]:>16} {wins[1]:>16} {wins[2]:>16} {wins[3]:>16}")
-
-    row("Win Rate", "win_rate", "pct")
-    row("Profit Factor", "profit_factor", "f2")
-    row("Net P&L", "net_pnl", "inr")
-
-    # Final capital
-    caps = [r["final_capital"] for _, _, r in ms]
-    print(f"  {'Final Capital':<22} {'₹{:,.0f}'.format(caps[0]):>16} {'₹{:,.0f}'.format(caps[1]):>16} {'₹{:,.0f}'.format(caps[2]):>16} {'₹{:,.0f}'.format(caps[3]):>16}")
-
-    row("Max Drawdown", "max_drawdown_pct", "pct")
-    row("Sharpe Estimate", "sharpe_estimate", "f2")
-    row("Avg Win", "avg_win_pnl", "inr")
-    row("Avg Loss", "avg_loss_pnl", "inr")
-
-    # R:R
-    rrs = [abs(m["avg_win_pnl"] / m["avg_loss_pnl"]) if m["avg_loss_pnl"] != 0 else 0 for _, m, _ in ms]
-    print(f"  {'Avg R:R':<22} {rrs[0]:>15.2f}x {rrs[1]:>15.2f}x {rrs[2]:>15.2f}x {rrs[3]:>15.2f}x")
-
-    row("Max Consec Losses", "max_consecutive_losses", "d")
-
-    # Trend blocked
-    blocked = [r.get("trend_blocked", 0) for _, _, r in ms]
-    print(f"  {'Trend Blocked':<22} {blocked[0]:>16} {'N/A':>16} {blocked[2]:>16} {'N/A':>16}")
-
-
-def main():
-    print("=" * 74)
-    print("  SENSEX INTRADAY BACKTEST — 20 EMA Channel + Trend Filter")
-    print(f"  Capital: ₹{INITIAL_CAPITAL:,.0f} | {NUM_LOTS} lots × {LOT_SIZE} = {LOT_SIZE * NUM_LOTS} qty/trade")
-    print("  Timeframe: 5-min candles | Channel exit | Re-entry on confirmation")
-    print("  Trend: VWAP + Opening Range + EMA Slope (score >= 2 to trade)")
-    print("  Candle types: Regular OHLC vs Heikin Ashi")
-    print(f"  Run Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    print("=" * 74)
-
-    # Load both candle types
-    data_regular = load_sensex_data()
-    data_ha = load_sensex_data(heikin_ashi=True)
-    n_days = data_regular["date"].nunique()
-    print(f"\n  Data: {n_days} trading days of real SENSEX 5-min candles")
-    print(f"  Range: {data_regular['date'].min()} to {data_regular['date'].max()}")
-
-    # ═══════════════════════════════════════════════════════════
-    # Run Regular candles
-    # ═══════════════════════════════════════════════════════════
-    print(f"\n{'═' * 74}")
-    print("  PART 1: REGULAR CANDLES")
-    print(f"{'═' * 74}")
-    reg_runs = run_candle_type("REGULAR", data_regular, n_days)
-
-    # ═══════════════════════════════════════════════════════════
-    # Run Heikin Ashi candles
-    # ═══════════════════════════════════════════════════════════
-    print(f"\n{'═' * 74}")
-    print("  PART 2: HEIKIN ASHI CANDLES")
-    print(f"{'═' * 74}")
-    ha_runs = run_candle_type("HEIKIN ASHI", data_ha, n_days)
-
-    # ═══════════════════════════════════════════════════════════
-    # Final head-to-head: Regular vs Heikin Ashi
-    # ═══════════════════════════════════════════════════════════
-    print_comparison_table(reg_runs, ha_runs)
-
-    print(f"\n{'─' * 74}")
+    print(f"\n{'─' * 80}")
     print("  RISK DISCLAIMER: Educational/research only.")
     print("  Past performance does not guarantee future results.")
-    print(f"{'─' * 74}\n")
+    print(f"{'─' * 80}\n")
 
     # Save results
     output_path = os.path.join(os.path.dirname(__file__), "ema_backtest_results.json")
     save_data = {
         "run_date": datetime.now().isoformat(),
-        "strategy": "20 EMA Channel + Trend Filter",
+        "strategy": "20 EMA Channel + Trend Filter + Chop Filter",
         "config": {
             "initial_capital": INITIAL_CAPITAL,
             "lot_size": LOT_SIZE,
             "num_lots": NUM_LOTS,
             "qty_per_trade": LOT_SIZE * NUM_LOTS,
             "ema_period": 20,
-            "trend_filter": "VWAP + Opening Range + EMA Channel Slope",
-            "trend_threshold": 2,
-            "max_trades_per_day": 4,
+            "candle_type": "Heikin Ashi",
             "data_interval": "5min",
-            "data_source": "real SENSEX 1-min resampled to 5-min",
+            "volume_days_only": True,
             "trading_days": n_days,
         },
     }
-    for candle_type, runs in [("regular", reg_runs), ("heikin_ashi", ha_runs)]:
-        for label, run_data in runs.items():
-            r = run_data["result"]
-            key = f"{candle_type}_{label}"
-            save_data[key] = {
-                "weekly_pnl": run_data["weeks"],
-                "metrics": r["metrics"],
-                "final_capital": r["final_capital"],
-                "trend_blocked": r.get("trend_blocked", 0),
-            }
+    for label, r in results:
+        key = label.replace(" ", "_").replace("+", "").replace(">", "gt").replace("<", "lt")
+        save_data[key] = {
+            "metrics": r["metrics"],
+            "final_capital": r["final_capital"],
+        }
     with open(output_path, "w") as f:
         json.dump(save_data, f, indent=2, default=str)
-
     print(f"  Results saved to: {output_path}")
-    return ha_runs["WITH TREND FILTER"]["result"]
 
 
 if __name__ == "__main__":
