@@ -1,5 +1,5 @@
 {
-  "run_date": "2026-03-04T01:40:11.987570",
+  "run_date": "2026-06-01T22:09:12.344407",
   "strategy": "20 EMA Channel + Trend Filter",
   "config": {
     "initial_capital": 20000.0,
