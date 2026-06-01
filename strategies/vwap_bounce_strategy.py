@@ -53,6 +53,16 @@ def find_swing_low(lows: np.ndarray, end_idx: int, lookback: int = 60) -> float:
     return np.min(lows[start:end_idx])
 
 
+def count_vwap_touches(highs, lows, vwap, idx, window=10):
+    """Count how many of the last `window` candles straddle VWAP (high >= VWAP >= low)."""
+    start = max(0, idx - window)
+    count = 0
+    for j in range(start, idx):
+        if highs[j] >= vwap[j] and lows[j] <= vwap[j]:
+            count += 1
+    return count
+
+
 def detect_vwap_bounce_signals(
     df: pd.DataFrame,
     lookback: int = 60,
@@ -61,6 +71,7 @@ def detect_vwap_bounce_signals(
     start_candle: int = 0,
     end_candle: int = 999,
     max_vol_ratio: float = 0.0,
+    max_vwap_touches: int = 0,
 ) -> pd.DataFrame:
     """
     Detect VWAP bounce entries on 1-min candles.
@@ -77,6 +88,7 @@ def detect_vwap_bounce_signals(
     start_candle : first candle index allowed for signals (skip early session)
     end_candle : last candle index allowed for signals (skip late session)
     max_vol_ratio : skip candles where volume > max_vol_ratio × day avg (0 = disabled)
+    max_vwap_touches : skip entry if >= this many of last 10 candles straddle VWAP (0 = disabled)
     """
     df = df.copy()
     df["signal"] = 0
@@ -112,6 +124,11 @@ def detect_vwap_bounce_signals(
             if max_vol_ratio > 0:
                 avg_vol = np.mean(volumes[:i+1])
                 if avg_vol > 0 and volumes[i] / avg_vol > max_vol_ratio:
+                    continue
+
+            if max_vwap_touches > 0:
+                touches = count_vwap_touches(highs, lows, vwap, i, window=10)
+                if touches >= max_vwap_touches:
                     continue
 
             h = highs[i]
