@@ -119,14 +119,23 @@ def main():
     print(f"\n  Data: {n_days} trading days, {len(df)} 1-min candles")
     print(f"  Range: {df['date'].min()} to {df['date'].max()}")
 
-    # Prep: candle index, VWAP, ADX, Choppiness
+    # Prep: candle index, VWAP
     df["candle_idx"] = df.groupby("date").cumcount()
     df["vwap"] = compute_vwap(df)
 
-    adx_df = compute_adx(df["high"], df["low"], df["close"], period=14)
-    df["adx"] = adx_df["adx"]
-
-    df["chop"] = compute_choppiness_index(df["high"], df["low"], df["close"], period=14)
+    # ADX and CI computed per day to avoid overnight gap contamination
+    df["adx"] = np.nan
+    df["chop"] = np.nan
+    for date in df["date"].unique():
+        mask = df["date"] == date
+        day = df.loc[mask]
+        if len(day) < 30:
+            continue
+        adx_df = compute_adx(day["high"], day["low"], day["close"], period=14)
+        df.loc[mask, "adx"] = adx_df["adx"].values
+        df.loc[mask, "chop"] = compute_choppiness_index(
+            day["high"], day["low"], day["close"], period=14
+        ).values
 
     print(f"  ADX range: {df['adx'].min():.1f} - {df['adx'].max():.1f} (mean: {df['adx'].mean():.1f})")
     print(f"  Chop range: {df['chop'].min():.1f} - {df['chop'].max():.1f} (mean: {df['chop'].mean():.1f})")
