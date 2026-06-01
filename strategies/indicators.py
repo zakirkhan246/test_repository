@@ -1,5 +1,5 @@
 """
-Technical indicator calculations: MACD, ATR, RSI.
+Technical indicator calculations: MACD, ATR, RSI, ADX, Choppiness Index.
 """
 
 import pandas as pd
@@ -93,3 +93,81 @@ def compute_atr(
     atr = true_range.ewm(alpha=1.0 / period, adjust=False).mean()
 
     return atr
+
+
+def compute_adx(
+    high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
+) -> pd.DataFrame:
+    """
+    Compute ADX (Average Directional Index).
+
+    ADX < 20-25 = weak/no trend (choppy), ADX > 25 = trending.
+
+    Returns DataFrame with columns: plus_di, minus_di, adx
+    """
+    prev_high = high.shift(1)
+    prev_low = low.shift(1)
+    prev_close = close.shift(1)
+
+    # True Range
+    tr1 = high - low
+    tr2 = (high - prev_close).abs()
+    tr3 = (low - prev_close).abs()
+    true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+    # Directional Movement
+    up_move = high - prev_high
+    down_move = prev_low - low
+
+    plus_dm = np.where((up_move > down_move) & (up_move > 0), up_move, 0.0)
+    minus_dm = np.where((down_move > up_move) & (down_move > 0), down_move, 0.0)
+
+    plus_dm = pd.Series(plus_dm, index=high.index)
+    minus_dm = pd.Series(minus_dm, index=high.index)
+
+    # Smoothed with Wilder's method (EMA with alpha=1/period)
+    atr = true_range.ewm(alpha=1.0 / period, adjust=False).mean()
+    smooth_plus_dm = plus_dm.ewm(alpha=1.0 / period, adjust=False).mean()
+    smooth_minus_dm = minus_dm.ewm(alpha=1.0 / period, adjust=False).mean()
+
+    plus_di = 100 * smooth_plus_dm / atr.replace(0, np.nan)
+    minus_di = 100 * smooth_minus_dm / atr.replace(0, np.nan)
+
+    # DX and ADX
+    di_sum = plus_di + minus_di
+    di_diff = (plus_di - minus_di).abs()
+    dx = 100 * di_diff / di_sum.replace(0, np.nan)
+    adx = dx.ewm(alpha=1.0 / period, adjust=False).mean()
+
+    return pd.DataFrame(
+        {"plus_di": plus_di, "minus_di": minus_di, "adx": adx},
+        index=high.index,
+    )
+
+
+def compute_choppiness_index(
+    high: pd.Series, low: pd.Series, close: pd.Series, period: int = 14
+) -> pd.Series:
+    """
+    Compute Choppiness Index (CI).
+
+    CI = 100 * LOG10(SUM(ATR, period) / (highest_high - lowest_low)) / LOG10(period)
+
+    CI > 61.8 = choppy/ranging market
+    CI < 38.2 = trending market
+    Values between = transitional
+    """
+    tr1 = high - low
+    tr2 = (high - close.shift(1)).abs()
+    tr3 = (low - close.shift(1)).abs()
+    true_range = pd.concat([tr1, tr2, tr3], axis=1).max(axis=1)
+
+    atr_sum = true_range.rolling(window=period).sum()
+    highest_high = high.rolling(window=period).max()
+    lowest_low = low.rolling(window=period).min()
+
+    hl_range = (highest_high - lowest_low).replace(0, np.nan)
+
+    ci = 100 * np.log10(atr_sum / hl_range) / np.log10(period)
+
+    return ci
