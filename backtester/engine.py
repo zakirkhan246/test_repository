@@ -6,7 +6,6 @@ Simulates trade execution with:
 - Intraday-only constraint (force close at 15:15)
 - Maximum trades per day limit
 - Realistic fill assumptions (entry at close of signal candle)
-- Optional trailing stop modes: none, candle, atr, step
 """
 
 import pandas as pd
@@ -21,12 +20,6 @@ class BacktestEngine:
 
     Processes each candle sequentially, manages open positions,
     and tracks all trades with full details.
-
-    Trailing modes:
-      "none"   — fixed SL + fixed target (original behavior)
-      "candle" — trail SL to prev candle's low (long) / high (short)
-      "atr"    — trail SL at highest/lowest price minus N × ATR
-      "step"   — move SL to breakeven at 1R, then trail in 1R steps
     """
 
     def __init__(
@@ -38,8 +31,6 @@ class BacktestEngine:
         lot_size: int = 0,
         num_lots: int = 0,
         reversal_exit_pct: float = 0.0,
-        trailing_mode: str = "none",
-        atr_trail_multiplier: float = 2.0,
     ):
         self.initial_capital = initial_capital
         self.position_size_pct = position_size_pct
@@ -47,8 +38,6 @@ class BacktestEngine:
         self.force_close_candle = force_close_candle
         self.fixed_qty = lot_size * num_lots if (lot_size > 0 and num_lots > 0) else 0
         self.reversal_exit_pct = reversal_exit_pct
-        self.trailing_mode = trailing_mode
-        self.atr_trail_multiplier = atr_trail_multiplier
 
     def run(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -56,7 +45,6 @@ class BacktestEngine:
 
         The DataFrame must have columns: open, high, low, close, signal,
         stop_loss, target, date, candle_idx
-        For ATR trailing: also needs 'atr' column
         """
         trades = []
         open_trade = None
@@ -69,18 +57,11 @@ class BacktestEngine:
             day_data = df[df["date"] == date]
             daily_trade_count[date] = 0
             prev_close = None
-            prev_low = None
-            prev_high = None
 
             for idx, (timestamp, row) in enumerate(day_data.iterrows()):
+                # Check if we have an open trade
                 if open_trade is not None:
-                    # Update trailing SL before checking exit
-                    if self.trailing_mode != "none":
-                        self._update_trailing_sl(
-                            open_trade, row, prev_close, prev_low, prev_high
-                        )
-
-                    # Check SL (and target if mode is "none")
+                    # Check stop loss and target against current candle
                     trade_result = self._check_exit(open_trade, row, timestamp)
 
                     if trade_result is not None:
@@ -91,12 +72,10 @@ class BacktestEngine:
                         capital += trade_result["pnl"]
                         open_trade = None
                         prev_close = row["close"]
-                        prev_low = row["low"]
-                        prev_high = row["high"]
                         continue
 
-                    # Reversal exit (only in fixed target mode)
-                    if self.trailing_mode == "none" and self.reversal_exit_pct > 0:
+                    # Update MFE and check reversal exit
+                    if self.reversal_exit_pct > 0:
                         trade_result = self._check_reversal_exit(
                             open_trade, row, prev_close, timestamp
                         )
@@ -108,8 +87,6 @@ class BacktestEngine:
                             capital += trade_result["pnl"]
                             open_trade = None
                             prev_close = row["close"]
-                            prev_low = row["low"]
-                            prev_high = row["high"]
                             continue
 
                     # Force close at end of day
@@ -121,17 +98,15 @@ class BacktestEngine:
                         trades.append(trade_result)
                         capital += trade_result["pnl"]
                         open_trade = None
-                        prev_close = row["close"]
-                        prev_low = row["low"]
-                        prev_high = row["high"]
                         continue
 
-                # Check for new entry signal
+                # Check for new entry signal (only if no open trade)
                 if open_trade is None and row["signal"] != 0:
                     if daily_trade_count[date] < self.max_trades_per_day:
                         if not np.isnan(row["stop_loss"]) and not np.isnan(
                             row["target"]
                         ):
+                            # Calculate position size
                             risk_per_unit = abs(row["close"] - row["stop_loss"])
                             if risk_per_unit > 0:
                                 if self.fixed_qty > 0:
@@ -147,20 +122,15 @@ class BacktestEngine:
                                     "entry_price": row["close"],
                                     "direction": int(row["signal"]),
                                     "stop_loss": row["stop_loss"],
-                                    "initial_sl": row["stop_loss"],
                                     "target": row["target"],
                                     "qty": qty,
                                     "entry_candle_idx": row["candle_idx"],
                                     "date": date,
                                     "mfe": 0.0,
-                                    "risk": risk_per_unit,
-                                    "best_price": row["close"],
                                 }
                                 daily_trade_count[date] += 1
 
                 prev_close = row["close"]
-                prev_low = row["low"]
-                prev_high = row["high"]
 
             # End of day: force close any open trade
             if open_trade is not None:
@@ -174,6 +144,7 @@ class BacktestEngine:
                 capital += trade_result["pnl"]
                 open_trade = None
 
+        # Compute metrics
         metrics = compute_metrics(trades, self.initial_capital)
 
         return {
@@ -182,85 +153,35 @@ class BacktestEngine:
             "final_capital": round(capital, 2),
         }
 
-    def _update_trailing_sl(self, trade, candle, prev_close, prev_low, prev_high):
-        """Update the trailing stop loss based on the selected mode."""
-        direction = trade["direction"]
-        entry = trade["entry_price"]
-        sl = trade["stop_loss"]
-        risk = trade["risk"]
-
-        if direction == 1:
-            trade["best_price"] = max(trade["best_price"], candle["high"])
-        else:
-            trade["best_price"] = min(trade["best_price"], candle["low"])
-
-        if self.trailing_mode == "candle":
-            if prev_low is None or prev_high is None:
-                return
-            if direction == 1:
-                new_sl = prev_low
-                if new_sl > sl:
-                    trade["stop_loss"] = new_sl
-            else:
-                new_sl = prev_high
-                if new_sl < sl:
-                    trade["stop_loss"] = new_sl
-
-        elif self.trailing_mode == "atr":
-            atr_val = candle.get("atr", 0)
-            if atr_val <= 0:
-                return
-            trail_dist = self.atr_trail_multiplier * atr_val
-            if direction == 1:
-                new_sl = trade["best_price"] - trail_dist
-                if new_sl > sl:
-                    trade["stop_loss"] = new_sl
-            else:
-                new_sl = trade["best_price"] + trail_dist
-                if new_sl < sl:
-                    trade["stop_loss"] = new_sl
-
-        elif self.trailing_mode == "step":
-            favorable = (trade["best_price"] - entry) if direction == 1 else (entry - trade["best_price"])
-            r_multiple = favorable / risk if risk > 0 else 0
-            if r_multiple >= 1.0:
-                steps = int(r_multiple)
-                if direction == 1:
-                    new_sl = entry + (steps - 1) * risk
-                    if new_sl > sl:
-                        trade["stop_loss"] = new_sl
-                else:
-                    new_sl = entry - (steps - 1) * risk
-                    if new_sl < sl:
-                        trade["stop_loss"] = new_sl
-
     def _check_exit(
         self, trade: Dict, candle: pd.Series, timestamp
     ) -> Dict[str, Any] | None:
-        """Check if current candle hits stop loss (and target in fixed mode)."""
+        """Check if current candle hits stop loss or target."""
         direction = trade["direction"]
         entry_price = trade["entry_price"]
         sl = trade["stop_loss"]
         target = trade["target"]
         qty = trade["qty"]
 
-        if direction == 1:
+        if direction == 1:  # Long trade
+            # Check stop loss first (conservative: assume worst case)
             if candle["low"] <= sl:
                 pnl = (sl - entry_price) * qty
-                result = "WIN" if pnl > 0 else "LOSS"
-                return self._build_trade_result(trade, sl, pnl, result, timestamp)
+                return self._build_trade_result(trade, sl, pnl, "LOSS", timestamp)
 
-            if self.trailing_mode == "none" and candle["high"] >= target:
+            # Check target
+            if candle["high"] >= target:
                 pnl = (target - entry_price) * qty
                 return self._build_trade_result(trade, target, pnl, "WIN", timestamp)
 
-        elif direction == -1:
+        elif direction == -1:  # Short trade
+            # Check stop loss first
             if candle["high"] >= sl:
                 pnl = (entry_price - sl) * qty
-                result = "WIN" if pnl > 0 else "LOSS"
-                return self._build_trade_result(trade, sl, pnl, result, timestamp)
+                return self._build_trade_result(trade, sl, pnl, "LOSS", timestamp)
 
-            if self.trailing_mode == "none" and candle["low"] <= target:
+            # Check target
+            if candle["low"] <= target:
                 pnl = (entry_price - target) * qty
                 return self._build_trade_result(trade, target, pnl, "WIN", timestamp)
 
@@ -318,6 +239,7 @@ class BacktestEngine:
         else:
             pnl = (entry_price - exit_price) * qty
 
+        result = "WIN" if pnl > 0 else "LOSS" if pnl < 0 else "BREAKEVEN"
         return self._build_trade_result(
             trade, exit_price, pnl, "TIME_EXIT", timestamp
         )
