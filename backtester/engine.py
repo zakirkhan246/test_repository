@@ -30,12 +30,14 @@ class BacktestEngine:
         force_close_candle: int = 72,  # 15:15 (candle 72 of 75)
         lot_size: int = 0,  # Units per lot (e.g. 10 for SENSEX). 0 = use pct sizing
         num_lots: int = 0,  # Number of lots to trade. 0 = use pct sizing
+        reversal_exit_pct: float = 0.0,  # Exit on reversal candle when MFE >= this % of target (0=off)
     ):
         self.initial_capital = initial_capital
         self.position_size_pct = position_size_pct
         self.max_trades_per_day = max_trades_per_day
         self.force_close_candle = force_close_candle
         self.fixed_qty = lot_size * num_lots if (lot_size > 0 and num_lots > 0) else 0
+        self.reversal_exit_pct = reversal_exit_pct
 
     def run(self, df: pd.DataFrame) -> Dict[str, Any]:
         """
@@ -69,6 +71,20 @@ class BacktestEngine:
                         capital += trade_result["pnl"]
                         open_trade = None
                         continue
+
+                    # Update MFE and check reversal exit
+                    if self.reversal_exit_pct > 0:
+                        trade_result = self._check_reversal_exit(
+                            open_trade, row, timestamp
+                        )
+                        if trade_result is not None:
+                            trade_result["duration_candles"] = (
+                                row["candle_idx"] - open_trade["entry_candle_idx"]
+                            )
+                            trades.append(trade_result)
+                            capital += trade_result["pnl"]
+                            open_trade = None
+                            continue
 
                     # Force close at end of day
                     if row["candle_idx"] >= self.force_close_candle:
@@ -107,6 +123,7 @@ class BacktestEngine:
                                     "qty": qty,
                                     "entry_candle_idx": row["candle_idx"],
                                     "date": date,
+                                    "mfe": 0.0,
                                 }
                                 daily_trade_count[date] += 1
 
@@ -164,6 +181,50 @@ class BacktestEngine:
                 return self._build_trade_result(trade, target, pnl, "WIN", timestamp)
 
         return None
+
+    def _check_reversal_exit(
+        self, trade: Dict, candle: pd.Series, timestamp
+    ) -> Dict[str, Any] | None:
+        """Exit if trade reached reversal_exit_pct of target and candle shows reversal."""
+        direction = trade["direction"]
+        entry_price = trade["entry_price"]
+        target = trade["target"]
+        qty = trade["qty"]
+        target_dist = abs(target - entry_price)
+        if target_dist == 0:
+            return None
+
+        if direction == 1:
+            trade["mfe"] = max(trade["mfe"], candle["high"] - entry_price)
+        else:
+            trade["mfe"] = max(trade["mfe"], entry_price - candle["low"])
+
+        mfe_pct = trade["mfe"] / target_dist * 100
+        if mfe_pct < self.reversal_exit_pct:
+            return None
+
+        candle_range = candle["high"] - candle["low"]
+        if candle_range == 0:
+            return None
+
+        body_ratio = abs(candle["close"] - candle["open"]) / candle_range
+        upper_wick = (candle["high"] - max(candle["open"], candle["close"])) / candle_range
+        lower_wick = (min(candle["open"], candle["close"]) - candle["low"]) / candle_range
+
+        is_spinning_top = body_ratio < 0.25 and upper_wick > 0.25 and lower_wick > 0.25
+
+        if direction == 1:
+            is_rejection = upper_wick > 0.40
+        else:
+            is_rejection = lower_wick > 0.40
+
+        if not (is_spinning_top or is_rejection):
+            return None
+
+        exit_price = candle["close"]
+        pnl = (exit_price - entry_price) * qty if direction == 1 else (entry_price - exit_price) * qty
+        result = "WIN" if pnl > 0 else ("LOSS" if pnl < 0 else "BREAKEVEN")
+        return self._build_trade_result(trade, exit_price, pnl, result, timestamp)
 
     def _force_close(
         self, trade: Dict, candle: pd.Series, timestamp
