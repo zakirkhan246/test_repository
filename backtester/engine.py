@@ -30,7 +30,7 @@ class BacktestEngine:
         force_close_candle: int = 72,  # 15:15 (candle 72 of 75)
         lot_size: int = 0,  # Units per lot (e.g. 10 for SENSEX). 0 = use pct sizing
         num_lots: int = 0,  # Number of lots to trade. 0 = use pct sizing
-        reversal_exit_pct: float = 0.0,  # Exit on reversal candle when MFE >= this % of target (0=off)
+        reversal_exit_pct: float = 0.0,  # Exit on reversal when MFE >= this % of target (0=off)
     ):
         self.initial_capital = initial_capital
         self.position_size_pct = position_size_pct
@@ -56,6 +56,7 @@ class BacktestEngine:
         for date in dates:
             day_data = df[df["date"] == date]
             daily_trade_count[date] = 0
+            prev_close = None
 
             for idx, (timestamp, row) in enumerate(day_data.iterrows()):
                 # Check if we have an open trade
@@ -70,12 +71,13 @@ class BacktestEngine:
                         trades.append(trade_result)
                         capital += trade_result["pnl"]
                         open_trade = None
+                        prev_close = row["close"]
                         continue
 
                     # Update MFE and check reversal exit
                     if self.reversal_exit_pct > 0:
                         trade_result = self._check_reversal_exit(
-                            open_trade, row, timestamp
+                            open_trade, row, prev_close, timestamp
                         )
                         if trade_result is not None:
                             trade_result["duration_candles"] = (
@@ -84,6 +86,7 @@ class BacktestEngine:
                             trades.append(trade_result)
                             capital += trade_result["pnl"]
                             open_trade = None
+                            prev_close = row["close"]
                             continue
 
                     # Force close at end of day
@@ -126,6 +129,8 @@ class BacktestEngine:
                                     "mfe": 0.0,
                                 }
                                 daily_trade_count[date] += 1
+
+                prev_close = row["close"]
 
             # End of day: force close any open trade
             if open_trade is not None:
@@ -183,9 +188,9 @@ class BacktestEngine:
         return None
 
     def _check_reversal_exit(
-        self, trade: Dict, candle: pd.Series, timestamp
+        self, trade: Dict, candle: pd.Series, prev_close, timestamp
     ) -> Dict[str, Any] | None:
-        """Exit if trade reached reversal_exit_pct of target and candle shows reversal."""
+        """Exit if trade reached reversal_exit_pct of target and candle closes against prev."""
         direction = trade["direction"]
         entry_price = trade["entry_price"]
         target = trade["target"]
@@ -203,22 +208,16 @@ class BacktestEngine:
         if mfe_pct < self.reversal_exit_pct:
             return None
 
-        candle_range = candle["high"] - candle["low"]
-        if candle_range == 0:
+        if prev_close is None:
             return None
 
-        body_ratio = abs(candle["close"] - candle["open"]) / candle_range
-        upper_wick = (candle["high"] - max(candle["open"], candle["close"])) / candle_range
-        lower_wick = (min(candle["open"], candle["close"]) - candle["low"]) / candle_range
+        is_reversal = False
+        if direction == 1 and candle["close"] < prev_close:
+            is_reversal = True
+        elif direction == -1 and candle["close"] > prev_close:
+            is_reversal = True
 
-        is_spinning_top = body_ratio < 0.25 and upper_wick > 0.25 and lower_wick > 0.25
-
-        if direction == 1:
-            is_rejection = upper_wick > 0.40
-        else:
-            is_rejection = lower_wick > 0.40
-
-        if not (is_spinning_top or is_rejection):
+        if not is_reversal:
             return None
 
         exit_price = candle["close"]
