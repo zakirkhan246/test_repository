@@ -113,7 +113,8 @@ def detect_vwap_bounce_signals(
 
             # --- LONG BOUNCE ---
             # Candle touches VWAP from above: low <= VWAP, close > VWAP
-            if l <= v and c > v:
+            # Candle must be bullish (close > open) to confirm direction
+            if l <= v and c > v and c > o:
                 # Confirm prior context: majority of last 5 closes above VWAP
                 recent_above = sum(1 for j in range(i-5, i) if closes[j] > vwap[j])
                 if recent_above >= 3:
@@ -131,7 +132,8 @@ def detect_vwap_bounce_signals(
 
             # --- SHORT BOUNCE ---
             # Candle touches VWAP from below: high >= VWAP, close < VWAP
-            if h >= v and c < v:
+            # Candle must be bearish (close < open) to confirm direction
+            if h >= v and c < v and c < o:
                 # Confirm prior context: majority of last 5 closes below VWAP
                 recent_below = sum(1 for j in range(i-5, i) if closes[j] < vwap[j])
                 if recent_below >= 3:
