@@ -35,7 +35,7 @@ LOT_SIZE = 20
 NUM_LOTS = 1
 
 START_CANDLE = 60   # skip first hour (10:15)
-END_CANDLE = 344    # no entries post 3pm
+END_CANDLE = 344    # no entries post 3:00pm
 
 ADX_THRESHOLD = 20
 CHOP_THRESHOLD = 50
@@ -163,7 +163,7 @@ def main():
     engine = BacktestEngine(
         initial_capital=INITIAL_CAPITAL,
         max_trades_per_day=10,
-        force_close_candle=370,
+        force_close_candle=360,  # 15:15
         lot_size=LOT_SIZE,
         num_lots=NUM_LOTS,
         reversal_exit_pct=REVERSAL_EXIT_PCT,
